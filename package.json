@@ -1,12 +1,13 @@
 {
   "name": "subs_folder",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "web_subs/server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "deploy:commands": "node bot_subs/deploy-commands.js",
     "start:bot": "node bot_subs/index.js",
-    "start:web": "node web_subs/server.js"
+    "start:web": "node web_subs/server.js",
+    "start": "node web_subs/server.js"
   },
   "keywords": [],
   "author": "",
