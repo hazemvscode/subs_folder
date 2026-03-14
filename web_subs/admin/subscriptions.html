@@ -1,0 +1,55 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Manage Subscriptions</title>
+    <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="/blue_galaxy.css">
+</head>
+<body>
+    <div class="wrap">
+        <div class="page-header">
+            <h1 class="neon-text">Manage Subscriptions</h1>
+            <div class="top-actions">
+                <form method="POST" action="/admin/logout">
+                    <button type="submit" class="button">Logout</button>
+                </form>
+            </div>
+        </div>
+
+        <form id="addSubForm" class="card">
+            <h2>Add / Update Subscription</h2>
+            <input type="text" name="user_name" placeholder="Username" required>
+            <input type="text" name="discord_id" placeholder="Discord ID" required>
+            <input type="text" name="tacticool_id" placeholder="Tacticool Public ID" required>
+            <input type="text" name="server_id" placeholder="Server ID" required>
+            <select name="subscription_type">
+                <option value="monthly">Monthly - $10</option>
+                <option value="yearly">Yearly - $100</option>
+            </select>
+            <input type="date" name="start_date" required>
+            <input type="date" name="end_date" required>
+            <button type="submit" class="button">Save Subscription</button>
+        </form>
+
+        <div class="card">
+            <h2>Active Subscriptions</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Plan</th>
+                        <th>Start</th>
+                        <th>End</th>
+                        <th>Server ID</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="subsTable"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="/script.js"></script>
+</body>
+</html>

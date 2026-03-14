@@ -1,0 +1,40 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Payments</title>
+    <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="/blue_galaxy.css">
+</head>
+<body>
+    <div class="wrap">
+        <div class="page-header">
+            <h1 class="neon-text">Payments</h1>
+            <div class="top-actions">
+                <form method="POST" action="/admin/logout">
+                    <button type="submit" class="button">Logout</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Recent Payments</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Plan</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Payment Date</th>
+                        <th>PayPal ID</th>
+                    </tr>
+                </thead>
+                <tbody id="paymentsTable"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="/script.js"></script>
+</body>
+</html>

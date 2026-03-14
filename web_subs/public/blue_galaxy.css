@@ -1,0 +1,118 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Orbitron:wght@500;700;900&display=swap');
+
+:root {
+    --bg-1: #05040e;
+    --bg-2: #081a3a;
+    --bg-3: #0b2c5c;
+    --neon: #37f3ff;
+    --neon-2: #66ffb7;
+    --card: rgba(6, 10, 24, 0.78);
+    --card-border: rgba(55, 243, 255, 0.55);
+    --glow: 0 0 18px rgba(55, 243, 255, 0.5), 0 0 45px rgba(55, 243, 255, 0.35);
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'DM Sans', sans-serif;
+    color: #ffffff;
+    min-height: 100vh;
+    overflow-x: hidden;
+    background:
+        radial-gradient(circle at 15% 15%, rgba(55, 243, 255, 0.15), transparent 40%),
+        radial-gradient(circle at 85% 10%, rgba(102, 255, 183, 0.12), transparent 35%),
+        radial-gradient(circle at 20% 80%, rgba(56, 96, 255, 0.25), transparent 45%),
+        linear-gradient(135deg, var(--bg-1), var(--bg-2) 55%, var(--bg-3));
+    background-size: 160% 160%;
+    animation: galaxyShift 28s linear infinite;
+    position: relative;
+}
+
+body::before,
+body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+}
+
+body::before {
+    background-image:
+        radial-gradient(2px 2px at 20% 30%, rgba(255,255,255,0.8) 0, transparent 40%),
+        radial-gradient(1px 1px at 40% 60%, rgba(255,255,255,0.5) 0, transparent 50%),
+        radial-gradient(2px 2px at 70% 20%, rgba(255,255,255,0.7) 0, transparent 40%),
+        radial-gradient(1px 1px at 85% 70%, rgba(255,255,255,0.5) 0, transparent 50%);
+    opacity: 0.5;
+    animation: starFloat 18s ease-in-out infinite;
+}
+
+body::after {
+    background: radial-gradient(circle at 50% 50%, rgba(55, 243, 255, 0.08), transparent 60%);
+    mix-blend-mode: screen;
+    animation: pulseGlow 6s ease-in-out infinite;
+}
+
+@keyframes galaxyShift {
+    0% { background-position: 0% 0%; }
+    50% { background-position: 100% 100%; }
+    100% { background-position: 0% 0%; }
+}
+
+@keyframes starFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-12px); }
+}
+
+@keyframes pulseGlow {
+    0%, 100% { opacity: 0.7; }
+    50% { opacity: 1; }
+}
+
+.neon-text {
+    font-family: 'Orbitron', sans-serif;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    color: var(--neon);
+    text-shadow: 0 0 6px rgba(55, 243, 255, 0.9), 0 0 16px rgba(55, 243, 255, 0.6);
+}
+
+.button {
+    background: linear-gradient(135deg, rgba(55,243,255,0.1), rgba(102,255,183,0.2));
+    border: 1px solid var(--card-border);
+    color: #fff;
+    padding: 12px 26px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 10px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.3s ease;
+    box-shadow: var(--glow);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.button:hover {
+    transform: translateY(-2px);
+    background: linear-gradient(135deg, rgba(55,243,255,0.35), rgba(102,255,183,0.45));
+    box-shadow: 0 0 20px rgba(55,243,255,0.7), 0 0 60px rgba(55,243,255,0.4);
+}
+
+.card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 22px;
+    margin: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5), var(--glow);
+    backdrop-filter: blur(6px);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    position: relative;
+    z-index: 1;
+}
+
+.card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 16px 38px rgba(0,0,0,0.55), 0 0 60px rgba(55,243,255,0.35);
+}

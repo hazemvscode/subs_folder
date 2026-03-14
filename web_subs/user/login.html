@@ -1,0 +1,110 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+        :root {
+            --ink: #e9f6ff;
+            --muted: rgba(233, 246, 255, 0.78);
+            --line: rgba(87, 245, 255, 0.5);
+            --teal: #2af5ff;
+            --mint: #7dffb5;
+            --panel: rgba(8, 12, 28, 0.88);
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 32px;
+            color: var(--ink);
+            font-family: 'Space Grotesk', system-ui, sans-serif;
+            background:
+                radial-gradient(1200px 700px at 10% -10%, rgba(45, 245, 255, 0.18), transparent 60%),
+                radial-gradient(900px 520px at 100% 0%, rgba(125, 255, 181, 0.16), transparent 55%),
+                linear-gradient(160deg, #040510 0%, #090f24 50%, #050814 100%);
+        }
+        .wrap {
+            width: min(980px, 100%);
+            display: grid;
+            gap: 18px;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        }
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 20px;
+            padding: 28px;
+            box-shadow: 0 0 24px rgba(55, 243, 255, 0.15);
+        }
+        h1 {
+            margin: 0 0 8px;
+            font-family: 'Orbitron', 'Space Grotesk', sans-serif;
+            letter-spacing: 0.6px;
+        }
+        h2 { margin: 0 0 10px; }
+        p { margin: 0 0 18px; color: var(--muted); }
+        label { font-size: 0.85rem; letter-spacing: 0.6px; text-transform: uppercase; }
+        input {
+            width: 100%;
+            margin: 8px 0 16px;
+            padding: 12px 14px;
+            border-radius: 10px;
+            border: 1px solid rgba(55, 243, 255, 0.4);
+            background: rgba(6, 14, 30, 0.8);
+            color: var(--ink);
+        }
+        .btn {
+            display: inline-block;
+            width: 100%;
+            padding: 13px 18px;
+            border-radius: 12px;
+            border: 1px solid rgba(55, 243, 255, 0.7);
+            background: linear-gradient(135deg, rgba(55,243,255,0.18), rgba(102,255,183,0.28));
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+        .btn:hover { background: rgba(55,243,255,0.45); color: #001022; }
+        .btn.secondary {
+            background: rgba(12, 26, 52, 0.7);
+            border-color: rgba(125, 255, 181, 0.6);
+        }
+        .note { font-size: 0.8rem; opacity: 0.75; margin-top: 12px; }
+        .title { text-align: center; margin-bottom: 10px; }
+        .badge { display: inline-block; padding: 6px 12px; border-radius: 999px; border: 1px solid rgba(55,243,255,0.4); font-size: 0.78rem; letter-spacing: 0.8px; text-transform: uppercase; }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <div class="card title">
+            <div class="badge">Secure Access</div>
+            <h1>Bot Subscriptions</h1>
+            <p>Choose the correct login below to continue.</p>
+        </div>
+        <form class="card" method="POST" action="/user/login">
+            <h2>User Login</h2>
+            <p>For players and clan members.</p>
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email" placeholder="you@example.com" required />
+            <label for="password">Password</label>
+            <input id="password" name="password" type="password" placeholder="••••••••" required />
+            <button class="btn" type="submit">Enter User Area</button>
+            <div class="note">Demo login: enter any email and password.</div>
+        </form>
+        <div class="card">
+            <h2>Admin Login</h2>
+            <p>For the owner and management only.</p>
+            <a class="btn secondary" href="/admin/login">Go to Admin Login</a>
+            <div class="note">Admin credentials are required.</div>
+        </div>
+    </div>
+</body>
+</html>

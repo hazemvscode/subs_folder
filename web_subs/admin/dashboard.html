@@ -1,0 +1,59 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="/blue_galaxy.css">
+</head>
+<body>
+    <div class="wrap">
+        <div class="page-header">
+            <h1 class="neon-text">Admin Dashboard</h1>
+            <div class="top-actions">
+                <form method="POST" action="/admin/logout">
+                    <button type="submit" class="button">Logout</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Overview</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Total Users</th>
+                        <th>Active Subs</th>
+                        <th>Expiring (7 Days)</th>
+                        <th>Revenue (Month)</th>
+                    </tr>
+                </thead>
+                <tbody id="overviewTable">
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <h2>User Management</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Discord ID</th>
+                        <th>Tacticool ID</th>
+                        <th>Join Date</th>
+                        <th>Plan</th>
+                        <th>Plan End</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTable"></tbody>
+            </table>
+            <p style="opacity:0.8;margin-top:10px;">Bot reminder rule: send a DM when 7 days are left on the plan.</p>
+        </div>
+    </div>
+
+    <script src="/script.js"></script>
+</body>
+</html>

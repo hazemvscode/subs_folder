@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support / Donations</title>
+    <link rel="stylesheet" href="/user/css/user.css">
+    <link rel="stylesheet" href="/blue_galaxy.css">
+</head>
+<body>
+    <div class="wrap">
+        <div class="page-header">
+            <h1 class="neon-text">Support The Bot</h1>
+            <p class="intro">You can support with any amount you want.</p>
+            <div class="badge-row">
+                <div class="badge">Community Powered</div>
+                <div class="badge">Fast Updates</div>
+                <div class="badge">Secure Payment</div>
+            </div>
+        </div>
+
+        <div class="page-grid">
+            <form id="donationForm" class="card">
+                <input type="text" name="user_name" placeholder="Your Name" required>
+                <input type="text" name="discord_tag" placeholder="Discord" required>
+                <input type="text" name="clan_name" placeholder="Clan" required>
+                <input type="number" min="1" step="0.01" name="amount" placeholder="Amount in USD" required>
+                <div class="payment-block">
+                    <label class="payment-title" for="donationPaymentMethod">Payment Method</label>
+                    <select id="donationPaymentMethod" name="payment_method" class="payment-method">
+                        <option value="paypal">PayPal (Card or PayPal)</option>
+                        <option value="card">Card via PayPal (Visa / Mastercard)</option>
+                        <option value="other">Other Credits</option>
+                    </select>
+                    <div class="payment-info">
+                        <p class="payment-note">Choose a method to see how to pay.</p>
+                        <div class="payment-details" data-role="details"></div>
+                    </div>
+                </div>
+                <div class="payment-info">
+                    <p class="payment-note">Need help? Contact Mazen on Discord for support.</p>
+                    <a class="button" href="https://discord.com/users/1019254470191890473" target="_blank" rel="noopener">Contact Mazen</a>
+                </div>
+                <button type="submit" class="button">Support Now</button>
+            </form>
+
+            <div class="card side-card">
+                <h2>Why Support?</h2>
+                <ul class="list">
+                    <li>Helps keep servers running and stable.</li>
+                    <li>Funds new features and upgrades.</li>
+                    <li>Directly supports community tools.</li>
+                </ul>
+                <h2 style="margin-top:16px;">Contact</h2>
+                <ul class="list">
+                    <li>Discord: MazenEagleeye</li>
+                    <li>Email: support@yourwebsite.com</li>
+                </ul>
+                <h2 style="margin-top:16px;">After Payment</h2>
+                <ul class="list">
+                    <li>Your support helps keep the bot running.</li>
+                    <li>If you need anything, contact Mazen on Discord.</li>
+                    <li>We respond quickly and keep you updated.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script src="/script.js"></script>
+</body>
+</html>
