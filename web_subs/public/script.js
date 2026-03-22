@@ -1,6 +1,26 @@
 // script.js
 
 document.addEventListener('DOMContentLoaded', () => {
+    const applyTheme = (theme) => {
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('theme', theme);
+        document.querySelectorAll('[data-action="toggle-theme"]').forEach(btn => {
+            btn.textContent = theme === 'dark' ? 'Light Mode' : 'Dark Mode';
+        });
+    };
+
+    const storedTheme = localStorage.getItem('theme') || 'light';
+    applyTheme(storedTheme);
+
+    document.querySelectorAll('[data-action="toggle-theme"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const current = document.documentElement.getAttribute('data-theme') || 'light';
+            applyTheme(current === 'dark' ? 'light' : 'dark');
+        });
+    });
+
+    const PAYPAL_LINK = 'https://paypal.me/mazenabosenna';
+
     const formatDate = (value) => {
         if (!value) return '--';
         const d = new Date(value);
@@ -15,14 +35,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const paymentDetailsByMethod = {
         paypal: [
-            'PayPal email: coming soon',
+            `PayPal link: <a href="${PAYPAL_LINK}" target="_blank" rel="noopener">paypal.me/mazenabosenna</a>`,
             'You can pay with PayPal or pay by card without a PayPal account.',
             'Steps: Click Pay with PayPal, then choose "Pay with Debit/Credit Card".'
         ],
         card: [
             'Card payments are processed by PayPal.',
             'You do NOT need a PayPal account to pay by Visa/Mastercard.',
-            'PayPal email: coming soon'
+            `PayPal link: <a href="${PAYPAL_LINK}" target="_blank" rel="noopener">paypal.me/mazenabosenna</a>`
         ],
         other: [
             'Other credits: Contact the admin to arrange payment.',
@@ -49,8 +69,23 @@ document.addEventListener('DOMContentLoaded', () => {
     if (userForm) {
         userForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const payload = new URLSearchParams(new FormData(userForm));
             try {
+                const statusRes = await fetch('/api/paypal/status');
+                const statusData = await statusRes.json();
+                const payload = new URLSearchParams(new FormData(userForm));
+
+                if (statusData.configured) {
+                    const res = await fetch('/api/paypal/create-order', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: payload
+                    });
+                    const data = await res.json();
+                    if (!data.ok || !data.approve_url) throw new Error(data.error || 'PayPal order failed');
+                    window.location.href = data.approve_url;
+                    return;
+                }
+
                 const res = await fetch('/api/subscriptions', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -62,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const success = document.getElementById('subSuccess');
                 if (success) success.style.display = 'block';
 
-                alert('Subscription saved. Complete payment, then use the bot invite link.');
+                window.location.href = PAYPAL_LINK;
             } catch (err) {
                 alert('Failed to save subscription. Please try again.');
             }
@@ -71,19 +106,121 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const donationForm = document.getElementById('donationForm');
     if (donationForm) {
-        donationForm.addEventListener('submit', (e) => {
+        donationForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            console.log('Donation Submitted:', Object.fromEntries(new FormData(donationForm)));
-            alert('Thank you for your support!');
+            const payload = new URLSearchParams(new FormData(donationForm));
+            try {
+                const res = await fetch('/api/donations', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: payload
+                });
+                const data = await res.json();
+                if (!data.ok) throw new Error(data.error || 'Request failed');
+
+                window.location.href = PAYPAL_LINK;
+            } catch (err) {
+                alert('Failed to save donation. Please try again.');
+            }
+        });
+    }
+
+    const loginForm = document.getElementById('userLoginForm');
+    if (loginForm) {
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = new URLSearchParams(new FormData(loginForm));
+            try {
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: payload
+                });
+                const data = await res.json();
+                if (!data.ok) throw new Error(data.error || 'Request failed');
+                window.location.href = '/home';
+            } catch (err) {
+                alert('Login failed. Please try again.');
+            }
+        });
+    }
+
+    const signupForm = document.getElementById('userSignupForm');
+    if (signupForm) {
+        signupForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = new URLSearchParams(new FormData(signupForm));
+            try {
+                const res = await fetch('/api/auth/signup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: payload
+                });
+                const data = await res.json();
+                if (!data.ok) throw new Error(data.error || 'Request failed');
+                alert('Signup complete. You can log in now.');
+                window.location.href = '/user/login';
+            } catch (err) {
+                alert('Signup failed. Please try again.');
+            }
+        });
+    }
+
+    const statusForm = document.getElementById('statusForm');
+    if (statusForm) {
+        statusForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = new URLSearchParams(new FormData(statusForm));
+            try {
+                const res = await fetch('/api/subscriptions/check', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: payload
+                });
+                const data = await res.json();
+                const result = document.getElementById('statusResult');
+                const text = document.getElementById('statusText');
+                const link = document.getElementById('inviteLink');
+                if (result) result.style.display = 'block';
+                if (!data.ok) {
+                    if (text) text.textContent = data.error || 'No active subscription found yet.';
+                    if (link) link.style.display = 'none';
+                    return;
+                }
+                if (text) text.textContent = 'Payment confirmed! You can invite the bot now.';
+                if (link) {
+                    link.href = data.invite;
+                    link.style.display = 'inline-block';
+                }
+            } catch (err) {
+                const result = document.getElementById('statusResult');
+                const text = document.getElementById('statusText');
+                const link = document.getElementById('inviteLink');
+                if (result) result.style.display = 'block';
+                if (text) text.textContent = 'Failed to check status. Please try again.';
+                if (link) link.style.display = 'none';
+            }
         });
     }
 
     const addSubForm = document.getElementById('addSubForm');
     if (addSubForm) {
-        addSubForm.addEventListener('submit', (e) => {
+        addSubForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            console.log('Admin Add Subscription:', Object.fromEntries(new FormData(addSubForm)));
-            alert('Subscription added successfully!');
+            const payload = new URLSearchParams(new FormData(addSubForm));
+            try {
+                const res = await fetch('/api/admin/subscriptions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: payload
+                });
+                const data = await res.json();
+                if (!data.ok) throw new Error(data.error || 'Request failed');
+
+                window.location.reload();
+            } catch (err) {
+                alert('Failed to save subscription. Please try again.');
+            }
         });
     }
 
@@ -177,11 +314,48 @@ document.addEventListener('DOMContentLoaded', () => {
                         <td>${p.payment_status || 'pending'}</td>
                         <td>${formatDate(p.payment_date)}</td>
                         <td>${p.payment_id || '--'}</td>
+                        <td>
+                            <button class="button" data-action="confirm" data-id="${p._id}" data-type="${p.type}">Confirm</button>
+                            <button class="button" data-action="pending" data-id="${p._id}" data-type="${p.type}">Pending</button>
+                        </td>
                     </tr>
                 `).join('');
             })
             .catch(() => {
-                paymentsTable.innerHTML = '<tr><td colspan="6">No payments found.</td></tr>';
+                paymentsTable.innerHTML = '<tr><td colspan="7">No payments found.</td></tr>';
             });
+
+        paymentsTable.addEventListener('click', async (e) => {
+            const btn = e.target.closest('button[data-action]');
+            if (!btn) return;
+            const action = btn.getAttribute('data-action');
+            const id = btn.getAttribute('data-id');
+            const type = btn.getAttribute('data-type');
+            if (!id || !type) return;
+
+            let body = null;
+            if (action === 'confirm') {
+                const paymentId = window.prompt('Enter PayPal Transaction ID (optional):') || '';
+                body = JSON.stringify({ payment_id: paymentId });
+            }
+
+            const res = await fetch(`/api/admin/payments/${type}/${id}/${action}`, {
+                method: 'POST',
+                headers: body ? { 'Content-Type': 'application/json' } : undefined,
+                body
+            });
+            if (res.ok) window.location.reload();
+        });
     }
+
+    document.querySelectorAll('[data-action="toggle-password"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const targetId = btn.getAttribute('data-target');
+            const input = document.getElementById(targetId);
+            if (!input) return;
+            const isHidden = input.getAttribute('type') === 'password';
+            input.setAttribute('type', isHidden ? 'text' : 'password');
+            btn.textContent = isHidden ? 'Hide' : 'Show';
+        });
+    });
 });

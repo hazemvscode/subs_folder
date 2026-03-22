@@ -1,5 +1,6 @@
-const Subscription = require('../../database/subscriptions');
+const store = require('../../database/store');
 const { getDaysLeft } = require('../utils/helpers');
+const { EmbedBuilder } = require('discord.js');
 
 const sendReminderIfNeeded = async (client, sub) => {
     if (!sub.discord_id) return;
@@ -10,11 +11,13 @@ const sendReminderIfNeeded = async (client, sub) => {
 
     try {
         const user = await client.users.fetch(sub.discord_id);
-        await user.send(
-            `Reminder: your subscription ends in ${daysLeft} day(s). Please renew to keep the bot active.`
-        );
-        sub.reminder_sent = true;
-        await sub.save();
+        const embed = new EmbedBuilder()
+            .setTitle('Subscription Reminder')
+            .setDescription(`Your subscription ends in ${daysLeft} day(s).`)
+            .addFields({ name: 'Next Step', value: 'Renew to keep the bot active.' })
+            .setColor(0xff6b4a);
+        await user.send({ embeds: [embed] });
+        store.updateSubscriptionById(sub._id, { reminder_sent: true });
     } catch (err) {
         console.error('Failed to send reminder DM:', err.message || err);
     }
@@ -22,11 +25,11 @@ const sendReminderIfNeeded = async (client, sub) => {
 
 const checkExpiringSubscriptions = async (client) => {
     try {
-        const subs = await Subscription.find({
-            end_date: { $exists: true },
-            reminder_sent: { $ne: true },
-            is_banned: { $ne: true }
-        });
+        const subs = store.listSubscriptions().filter(s =>
+            s.end_date &&
+            s.reminder_sent !== true &&
+            s.is_banned !== true
+        );
 
         for (const sub of subs) {
             await sendReminderIfNeeded(client, sub);

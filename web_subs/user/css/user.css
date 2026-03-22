@@ -1,35 +1,40 @@
-body { color: #fff; }
-.wrap { max-width: 1200px; margin: 0 auto; padding: 24px 18px 40px; }
-.page-header { text-align: center; margin-top: 10px; }
-h1 { text-align: center; margin-top: 12px; }
-.intro { text-align: center; margin: 10px auto 22px; max-width: 760px; padding: 0 18px; opacity: 0.9; }
-.page-grid { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); align-items: start; }
+body { color: var(--ink); }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 32px 18px 56px; }
+.page-header { text-align: left; margin-top: 10px; display: grid; gap: 10px; }
+h1 { margin: 12px 0 6px; font-size: clamp(2rem, 3.5vw, 2.6rem); }
+.intro { margin: 4px 0 14px; max-width: 780px; opacity: 0.85; color: var(--muted); }
+.page-grid { display: grid; gap: 22px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); align-items: start; }
 form { margin: 0 auto 20px; }
+label { font-size: 0.85rem; color: var(--muted); }
 input, select {
     width: 100%;
-    padding: 12px;
-    margin: 10px 0;
-    border-radius: 10px;
-    border: 1px solid rgba(55, 243, 255, 0.6);
-    background: rgba(8, 12, 28, 0.75);
-    color: #fff;
+    padding: 12px 14px;
+    margin: 8px 0;
+    border-radius: 12px;
+    border: 1px solid rgba(20, 20, 20, 0.16);
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--ink);
     outline: none;
-    box-shadow: inset 0 0 18px rgba(0,0,0,0.35);
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: inset 0 0 0 rgba(0,0,0,0);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 input:focus, select:focus {
-    border-color: #66ffb7;
-    box-shadow: 0 0 0 2px rgba(102,255,183,0.2);
+    border-color: var(--accent);
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(255, 107, 74, 0.18);
 }
 .card { margin: 18px 0; }
-.button { width: 100%; margin-top: 6px; }
+.button { width: 100%; margin-top: 8px; }
+.button.inline { width: auto; margin-top: 0; }
 .payment-block { margin-top: 10px; }
-.payment-title { display: block; margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; font-size: 0.85rem; opacity: 0.85; }
-.payment-info { border: 1px dashed rgba(55, 243, 255, 0.6); border-radius: 10px; padding: 12px; margin-top: 8px; background: rgba(10, 14, 30, 0.6); }
-.payment-note { margin: 0 0 6px 0; opacity: 0.85; }
+.payment-title { display: block; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.8px; font-size: 0.75rem; opacity: 0.7; color: var(--muted); }
+.payment-info { border: 1px dashed rgba(20, 20, 20, 0.18); border-radius: 14px; padding: 12px; margin-top: 8px; background: rgba(255, 255, 255, 0.6); }
+.payment-note { margin: 0 0 6px 0; opacity: 0.85; color: var(--muted); }
 .payment-details { font-size: 0.95rem; line-height: 1.5; }
-.side-card { }
+.payment-details a { color: var(--accent); text-decoration: none; font-weight: 600; }
+.payment-details a:hover { text-decoration: underline; }
+.side-card { position: sticky; top: 22px; }
 .badge-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
-.badge { border: 1px solid rgba(55,243,255,0.5); padding: 4px 10px; border-radius: 999px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.8px; background: rgba(55,243,255,0.08); }
-.list { margin: 0; padding-left: 18px; }
+.badge { border: 1px solid rgba(20,20,20,0.18); padding: 6px 12px; border-radius: 999px; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.7px; background: rgba(255, 255, 255, 0.75); color: var(--muted); }
+.list { margin: 0; padding-left: 18px; color: var(--muted); }
 .list li { margin: 6px 0; }

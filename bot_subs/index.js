@@ -1,7 +1,7 @@
 require('dotenv').config();
 const { Client, GatewayIntentBits } = require('discord.js');
-const mongoose = require('../database/config');
-const Subscription = require('../database/subscriptions');
+const store = require('../database/store');
+const ALLOWED_SERVER_ID = process.env.ALLOWED_SERVER_ID || '1085614826233016411';
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
@@ -19,19 +19,24 @@ client.on('interactionCreate', async interaction => {
         return interaction.reply({ content: 'Commands must be used inside a server.', ephemeral: true });
     }
 
-    if (mongoose.connection.readyState !== 1) {
+    if (interaction.guildId !== ALLOWED_SERVER_ID) {
         return interaction.reply({
-            content: 'Database is offline. Please try again later.',
+            content: 'This bot is only active for the authorized server.',
             ephemeral: true
         });
     }
 
+    if (interaction.guildId === ALLOWED_SERVER_ID) {
+        return;
+    }
+
     const now = new Date();
-    const activeSub = await Subscription.findOne({
-        server_id: interaction.guildId,
-        payment_status: 'active',
-        end_date: { $gt: now },
-        is_banned: { $ne: true }
+    const activeSub = store.listSubscriptions().find(s => {
+        const end = s.end_date ? new Date(s.end_date) : null;
+        return s.server_id === interaction.guildId &&
+            s.payment_status === 'active' &&
+            end && end > now &&
+            s.is_banned !== true;
     });
 
     if (!activeSub) {

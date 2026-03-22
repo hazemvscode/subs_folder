@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sign Up</title>
+    <link rel="stylesheet" href="/blue_galaxy.css">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 32px;
+        }
+        .wrap {
+            width: min(720px, 100%);
+            display: grid;
+            gap: 18px;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.88);
+            border: 1px solid rgba(20, 20, 20, 0.08);
+            border-radius: 20px;
+            padding: 28px;
+            box-shadow: 0 16px 32px rgba(20, 20, 20, 0.12);
+        }
+        h1 { margin: 0 0 8px; letter-spacing: 0.4px; }
+        p { margin: 0 0 18px; color: var(--muted); }
+        label { font-size: 0.78rem; letter-spacing: 0.6px; text-transform: uppercase; color: var(--muted); }
+        input {
+            width: 100%;
+            margin: 8px 0 16px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(20, 20, 20, 0.16);
+            background: rgba(255, 255, 255, 0.9);
+            color: var(--ink);
+            outline: none;
+        }
+        input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(255, 107, 74, 0.18);
+        }
+        .input-row {
+            position: relative;
+        }
+        .input-row .toggle-pass {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: 1px solid rgba(20, 20, 20, 0.2);
+            background: transparent;
+            color: var(--muted);
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 0.72rem;
+            cursor: pointer;
+        }
+        .btn {
+            display: inline-block;
+            width: 100%;
+            padding: 13px 18px;
+            border-radius: 999px;
+            border: 1px solid #111;
+            background: #111;
+            color: #fff;
+            letter-spacing: 0.4px;
+            font-size: 0.95rem;
+            cursor: pointer;
+        }
+        .btn.secondary {
+            background: transparent;
+            color: var(--ink);
+            border: 1px solid rgba(20, 20, 20, 0.2);
+        }
+        .note { font-size: 0.8rem; opacity: 0.75; margin-top: 12px; color: var(--muted); }
+        .btn.google {
+            background: transparent;
+            border: 1px dashed rgba(20, 20, 20, 0.2);
+            color: var(--muted);
+        }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <div class="card">
+            <h1>Create Your Account</h1>
+            <p>Sign up first, then you can log in and subscribe.</p>
+            <form id="userSignupForm">
+                <label for="email">Email</label>
+                <input id="email" name="email" type="email" placeholder="you@example.com" required />
+                <label for="password">Password</label>
+                <div class="input-row">
+                    <input id="password" name="password" type="password" placeholder="••••••••" required />
+                    <button class="toggle-pass" type="button" data-action="toggle-password" data-target="password">Show</button>
+                </div>
+                <button class="btn" type="submit">Create Account</button>
+                <button class="btn google" type="button" disabled>Continue with Google (Soon)</button>
+                <div class="note">Already have an account? <a href="/user/login">Login</a>.</div>
+                <button class="btn secondary" type="button" data-action="toggle-theme" style="margin-top:10px;">Dark Mode</button>
+            </form>
+        </div>
+    </div>
+    <script src="/script.js"></script>
+</body>
+</html>

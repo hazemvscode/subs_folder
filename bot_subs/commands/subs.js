@@ -1,41 +1,49 @@
-const mongoose = require('../../database/config');
-const Subscription = require('../../database/subscriptions');
+const store = require('../../database/store');
 const { getTimeLeft } = require('../utils/helpers');
+const { EmbedBuilder } = require('discord.js');
 
 module.exports = async (interaction) => {
-    if (mongoose.connection.readyState !== 1) {
-        return interaction.reply({
-            content: 'Database is offline. Please try again later.',
-            ephemeral: true
-        });
-    }
-
     const userId = interaction.user.id;
     const userTag = interaction.user.tag;
 
-    const banned = await Subscription.findOne({
-        $or: [{ discord_id: userId }, { discord_tag: userTag }],
-        is_banned: true
-    });
+    const subsAll = store.listSubscriptions();
+    const banned = subsAll.find(s =>
+        (s.discord_id === userId || s.discord_tag === userTag) &&
+        s.is_banned === true
+    );
 
     if (banned) {
         return interaction.reply({ content: 'Your account is banned. Contact support.', ephemeral: true });
     }
 
-    const userSubs = await Subscription.find({
-        $or: [{ discord_id: userId }, { discord_tag: userTag }],
-        is_banned: { $ne: true }
-    });
+    const userSubs = subsAll.filter(s =>
+        (s.discord_id === userId || s.discord_tag === userTag) &&
+        s.is_banned !== true
+    );
 
     if (!userSubs || userSubs.length === 0) {
-        return interaction.reply({ content: 'No active subscriptions found.', ephemeral: true });
+        const emptyEmbed = new EmbedBuilder()
+            .setTitle('Subscription Status')
+            .setDescription('No active subscriptions found yet.')
+            .setColor(0xff6b4a);
+        return interaction.reply({ embeds: [emptyEmbed], ephemeral: true });
     }
 
-    let replyMsg = 'Subscription time left:\n';
+    const embed = new EmbedBuilder()
+        .setTitle('Your Subscription Status')
+        .setDescription('Here is your current access overview.')
+        .setColor(0xff6b4a);
+
     userSubs.forEach(sub => {
         const timeLeft = getTimeLeft(sub.end_date);
-        replyMsg += `Clan: ${sub.clan_name || 'N/A'} | Server: ${sub.server_id || 'N/A'} | ${timeLeft}\n`;
+        const plan = sub.subscription_type ? sub.subscription_type.toUpperCase() : 'N/A';
+        const status = sub.payment_status || 'pending';
+        embed.addFields({
+            name: sub.clan_name || 'Clan',
+            value: `Server: ${sub.server_id || 'N/A'}\nPlan: ${plan}\nTime left: ${timeLeft}\nStatus: ${status}`,
+            inline: false
+        });
     });
 
-    return interaction.reply({ content: replyMsg, ephemeral: true });
+    return interaction.reply({ embeds: [embed], ephemeral: true });
 };

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Status</title>
+    <link rel="stylesheet" href="/user/css/user.css">
+    <link rel="stylesheet" href="/blue_galaxy.css">
+</head>
+<body>
+    <div class="wrap">
+        <div class="page-header">
+            <h1 class="neon-text">Payment Status</h1>
+            <p class="intro">Enter your Discord ID or Server ID to unlock the bot invite link after payment confirmation.</p>
+            <div class="badge-row">
+                <div class="badge">Secure Check</div>
+                <div class="badge">Instant Unlock</div>
+                <div class="badge">Verified Payments</div>
+            </div>
+            <button class="button secondary inline" type="button" data-action="toggle-theme">Dark Mode</button>
+        </div>
+
+        <div class="page-grid">
+            <form id="statusForm" class="card">
+                <input type="text" name="discord_id" placeholder="Discord ID (optional)">
+                <input type="text" name="server_id" placeholder="Server ID (optional)">
+                <button type="submit" class="button">Check Status</button>
+                <div class="payment-info" id="statusResult" style="display:none;">
+                    <p class="payment-note" id="statusText"></p>
+                    <a class="button" id="inviteLink" href="#" target="_blank" rel="noopener" style="display:none;">Invite The Bot</a>
+                </div>
+            </form>
+
+            <div class="card side-card">
+                <h2>How It Works</h2>
+                <ul class="list">
+                    <li>We confirm PayPal payments manually.</li>
+                    <li>Once confirmed, your plan becomes active.</li>
+                    <li>Then this page unlocks the invite link.</li>
+                </ul>
+                <h2 style="margin-top:16px;">Need Help?</h2>
+                <ul class="list">
+                    <li>Contact Mazen on Discord if you need help.</li>
+                    <li>Make sure you entered the correct IDs.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script src="/script.js"></script>
+</body>
+</html>

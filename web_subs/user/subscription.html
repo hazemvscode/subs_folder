@@ -11,12 +11,13 @@
     <div class="wrap">
         <div class="page-header">
             <h1 class="neon-text">Subscribe To The Bot</h1>
-            <p class="intro">Get premium bot features for your Discord server. Choose monthly or yearly billing below.</p>
+            <p class="intro">Clean automation for your Discord server. Pick a plan, pay fast, and get your invite link right after.</p>
             <div class="badge-row">
                 <div class="badge">Priority Tools</div>
-                <div class="badge">Fast Setup</div>
-                <div class="badge">Trusted Payments</div>
+                <div class="badge">Instant Setup</div>
+                <div class="badge">Verified Payments</div>
             </div>
+            <button class="button secondary inline" type="button" data-action="toggle-theme">Dark Mode</button>
         </div>
 
         <div class="page-grid">
@@ -28,8 +29,8 @@
                 <input type="text" name="clan_name" placeholder="Clan" required>
                 <input type="text" name="server_id" placeholder="Server ID" required>
                 <select name="subscription_type">
-                    <option value="monthly">Monthly - $10</option>
-                    <option value="yearly">Yearly - $100 (instead of $120)</option>
+                    <option value="monthly">Monthly - $5</option>
+                    <option value="yearly">Yearly - $50 (instead of $60)</option>
                 </select>
                 <div class="payment-block">
                     <label class="payment-title" for="subPaymentMethod">Payment Method</label>
@@ -44,8 +45,8 @@
                     </div>
                 </div>
                 <div class="payment-info" id="subSuccess" style="display:none;">
-                    <p class="payment-note">After PayPal confirms payment, you will get the bot invite link and unlock your server.</p>
-                    <a class="button" href="https://discord.com/oauth2/authorize?client_id=1344047946638954716&scope=bot%20applications.commands&permissions=8" target="_blank" rel="noopener">Invite The Bot</a>
+                    <p class="payment-note">Payment saved. After confirmation, use the status page to get your invite link.</p>
+                    <a class="button" href="/user/status">Check Payment Status</a>
                 </div>
                 <div class="payment-info">
                     <p class="payment-note">Need help or want to confirm payment? Contact Mazen on Discord.</p>
@@ -62,11 +63,24 @@
                     <li>Fast slash commands for daily use.</li>
                     <li>Priority updates and feature access.</li>
                 </ul>
+                <h2 style="margin-top:16px;">Plan At A Glance</h2>
+                <ul class="list">
+                    <li>Monthly: $5, cancel anytime.</li>
+                    <li>Yearly: $50 (save $10).</li>
+                    <li>Secure PayPal checkout.</li>
+                </ul>
                 <h2 style="margin-top:16px;">Payment Steps</h2>
                 <ul class="list">
                     <li>Choose PayPal or Card (via PayPal).</li>
                     <li>Complete your payment securely.</li>
-                    <li>After payment, your plan becomes active.</li>
+                    <li>After payment, we confirm and activate your plan.</li>
+                    <li>Then you can get the bot invite link on the status page.</li>
+                </ul>
+                <h2 style="margin-top:16px;">Get Invite Link</h2>
+                <ul class="list">
+                    <li>Open the status page after you pay.</li>
+                    <li>Enter your Discord ID or Server ID.</li>
+                    <li>Get the invite link once payment is active.</li>
                 </ul>
                 <h2 style="margin-top:16px;">How To Get Server ID</h2>
                 <ul class="list">
