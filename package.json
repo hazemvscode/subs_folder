@@ -7,7 +7,8 @@
     "deploy:commands": "node bot_subs/deploy-commands.js",
     "start:bot": "node bot_subs/index.js",
     "start:web": "node web_subs/server.js",
-    "start": "node web_subs/server.js"
+    "start:all": "node scripts/start-all.js",
+    "start": "node scripts/start-all.js"
   },
   "keywords": [],
   "author": "",
