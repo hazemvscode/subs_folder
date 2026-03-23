@@ -29,8 +29,8 @@
                 <input type="text" name="clan_name" placeholder="Clan" required>
                 <input type="text" name="server_id" placeholder="Server ID" required>
                 <select name="subscription_type">
-                    <option value="monthly">Monthly - $5</option>
-                    <option value="yearly">Yearly - $50 (instead of $60)</option>
+                    <option value="monthly">Monthly - $6</option>
+                    <option value="yearly">Yearly - $60 (save $12)</option>
                 </select>
                 <div class="payment-block">
                     <label class="payment-title" for="subPaymentMethod">Payment Method</label>
@@ -45,14 +45,18 @@
                     </div>
                 </div>
                 <div class="payment-info" id="subSuccess" style="display:none;">
-                    <p class="payment-note">Payment saved. After confirmation, use the status page to get your invite link.</p>
+                    <p class="payment-note">Payment complete! You can check status to unlock the invite link.</p>
                     <a class="button" href="/user/status">Check Payment Status</a>
                 </div>
                 <div class="payment-info">
                     <p class="payment-note">Need help or want to confirm payment? Contact Mazen on Discord.</p>
                     <a class="button" href="https://discord.com/users/1019254470191890473" target="_blank" rel="noopener">Contact Mazen</a>
                 </div>
-                <button type="submit" class="button">Buy Now</button>
+                <div class="payment-info" id="subPaypalInfo" style="display:none;">
+                    <p class="payment-note">Pay securely with PayPal or card.</p>
+                    <div id="paypalSubscriptionButtons" class="paypal-buttons"></div>
+                </div>
+                <button type="submit" class="button" id="subFallbackButton">Buy Now</button>
             </form>
 
             <div class="card side-card">
@@ -65,8 +69,8 @@
                 </ul>
                 <h2 style="margin-top:16px;">Plan At A Glance</h2>
                 <ul class="list">
-                    <li>Monthly: $5, cancel anytime.</li>
-                    <li>Yearly: $50 (save $10).</li>
+                    <li>Monthly: $6, cancel anytime.</li>
+                    <li>Yearly: $60 (save $12).</li>
                     <li>Secure PayPal checkout.</li>
                 </ul>
                 <h2 style="margin-top:16px;">Payment Steps</h2>

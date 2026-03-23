@@ -9,42 +9,66 @@ const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 const subsCommand = require('./commands/subs');
 const readyEvent = require('./events/ready');
 
-client.once('ready', () => readyEvent(client));
+client.once('clientReady', () => readyEvent(client));
+
+const safeReply = async (interaction, options) => {
+    try {
+        if (interaction.replied || interaction.deferred) {
+            return await interaction.followUp(options);
+        }
+        return await interaction.reply(options);
+    } catch (err) {
+        // Ignore "Unknown interaction" or already-responded errors.
+        return null;
+    }
+};
 
 client.on('interactionCreate', async interaction => {
-    if (!interaction.isChatInputCommand()) return;
-    if (interaction.commandName === 'subs') return subsCommand(interaction, client);
+    try {
+        if (!interaction.isChatInputCommand()) return;
+        if (interaction.commandName === 'subs') return subsCommand(interaction, client);
 
-    if (!interaction.guildId) {
-        return interaction.reply({ content: 'Commands must be used inside a server.', ephemeral: true });
-    }
+        if (!interaction.guildId) {
+            return safeReply(interaction, { content: 'Commands must be used inside a server.', ephemeral: true });
+        }
 
-    if (interaction.guildId !== ALLOWED_SERVER_ID) {
-        return interaction.reply({
-            content: 'This bot is only active for the authorized server.',
-            ephemeral: true
+        if (interaction.guildId !== ALLOWED_SERVER_ID) {
+            return safeReply(interaction, {
+                content: 'This bot is only active for the authorized server.',
+                ephemeral: true
+            });
+        }
+
+        if (interaction.guildId === ALLOWED_SERVER_ID) {
+            return;
+        }
+
+        const now = new Date();
+        const activeSub = store.listSubscriptions().find(s => {
+            const end = s.end_date ? new Date(s.end_date) : null;
+            return s.server_id === interaction.guildId &&
+                s.payment_status === 'active' &&
+                end && end > now &&
+                s.is_banned !== true;
         });
-    }
 
-    if (interaction.guildId === ALLOWED_SERVER_ID) {
-        return;
+        if (!activeSub) {
+            return safeReply(interaction, {
+                content: 'No active subscription found for this server. Please subscribe to unlock commands.',
+                ephemeral: true
+            });
+        }
+    } catch (err) {
+        console.error('interactionCreate error:', err);
     }
+});
 
-    const now = new Date();
-    const activeSub = store.listSubscriptions().find(s => {
-        const end = s.end_date ? new Date(s.end_date) : null;
-        return s.server_id === interaction.guildId &&
-            s.payment_status === 'active' &&
-            end && end > now &&
-            s.is_banned !== true;
-    });
+client.on('error', (err) => {
+    console.error('Discord client error:', err);
+});
 
-    if (!activeSub) {
-        return interaction.reply({
-            content: 'No active subscription found for this server. Please subscribe to unlock commands.',
-            ephemeral: true
-        });
-    }
+process.on('unhandledRejection', (err) => {
+    console.error('Unhandled rejection:', err);
 });
 
 if (!process.env.BOT_TOKEN) {

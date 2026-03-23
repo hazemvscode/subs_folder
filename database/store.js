@@ -92,6 +92,7 @@ const findSubscriptionById = (id) => listSubscriptions().find(s => s._id === id)
 const findDonationById = (id) => listDonations().find(d => d._id === id);
 const findUserByEmail = (email) => listUsers().find(u => u.email === email);
 const findSubscriptionByPaypalOrderId = (orderId) => listSubscriptions().find(s => s.paypal_order_id === orderId);
+const findDonationByPaypalOrderId = (orderId) => listDonations().find(d => d.paypal_order_id === orderId);
 
 const upsertSubscriptionByServerId = (serverId, updates) => {
     const data = readData();
@@ -122,6 +123,7 @@ module.exports = {
     findSubscriptionById,
     findDonationById,
     findSubscriptionByPaypalOrderId,
+    findDonationByPaypalOrderId,
     findUserByEmail,
     upsertSubscriptionByServerId
 };

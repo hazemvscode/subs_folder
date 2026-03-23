@@ -4,8 +4,8 @@ const store = require('../../database/store');
 const crypto = require('crypto');
 
 const PRICING = {
-    monthly: { amount: 5, months: 1 },
-    yearly: { amount: 50, months: 12 }
+    monthly: { amount: 6, months: 1 },
+    yearly: { amount: 60, months: 12 }
 };
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'mazenabosenna15@gmail.com';
@@ -18,6 +18,7 @@ const PW_DIGEST = 'sha512';
 const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID || '';
 const PAYPAL_CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET || '';
 const PAYPAL_MODE = (process.env.PAYPAL_MODE || 'sandbox').toLowerCase();
+const PAYPAL_CURRENCY = (process.env.PAYPAL_CURRENCY || 'USD').toUpperCase();
 const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || 'http://localhost:3000';
 const PAYPAL_WEBHOOK_ID = process.env.PAYPAL_WEBHOOK_ID || '';
 const PAYPAL_API_BASE = PAYPAL_MODE === 'live'
@@ -46,7 +47,7 @@ const getPaypalAccessToken = async () => {
     return data.access_token;
 };
 
-const createPaypalOrder = async ({ amount, customId }) => {
+const createPaypalOrder = async ({ amount, customId, description }) => {
     const accessToken = await getPaypalAccessToken();
     const res = await fetch(`${PAYPAL_API_BASE}/v2/checkout/orders`, {
         method: 'POST',
@@ -57,7 +58,8 @@ const createPaypalOrder = async ({ amount, customId }) => {
         body: JSON.stringify({
             intent: 'CAPTURE',
             purchase_units: [{
-                amount: { currency_code: 'USD', value: amount.toFixed(2) },
+                amount: { currency_code: PAYPAL_CURRENCY, value: amount.toFixed(2) },
+                description: description || undefined,
                 custom_id: customId
             }],
             application_context: {
@@ -69,6 +71,20 @@ const createPaypalOrder = async ({ amount, customId }) => {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || 'PayPal order failed');
+    return data;
+};
+
+const capturePaypalOrder = async (orderId) => {
+    const accessToken = await getPaypalAccessToken();
+    const res = await fetch(`${PAYPAL_API_BASE}/v2/checkout/orders/${orderId}/capture`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+        }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'PayPal capture failed');
     return data;
 };
 
@@ -208,9 +224,9 @@ router.get('/home', (req, res) => {
             </div>
             <div class="hero-card">
                 <div class="tag muted">Most Popular</div>
-                <div class="price">$5<span class="muted"> / month</span></div>
+                <div class="price">$6<span class="muted"> / month</span></div>
                 <div class="muted">Upgrade anytime or save with yearly.</div>
-                <div class="price">$50<span class="muted"> / year</span></div>
+                <div class="price">$60<span class="muted"> / year</span></div>
                 <div class="hero-actions">
                     <a class="button" href="/user/subscription">Buy Subscription</a>
                     <a class="button ghost" href="/user/support">Donate</a>
@@ -245,14 +261,14 @@ router.get('/home', (req, res) => {
             <div class="pricing">
                 <div class="price-card">
                     <div class="tag">Monthly</div>
-                    <div class="price">$5</div>
+                    <div class="price">$6</div>
                     <div class="muted">Perfect for getting started.</div>
                     <a class="button" href="/user/subscription">Subscribe Monthly</a>
                 </div>
                 <div class="price-card highlight">
                     <div class="tag">Yearly</div>
-                    <div class="price">$50</div>
-                    <div class="muted">Save $10 vs monthly.</div>
+                    <div class="price">$60</div>
+                    <div class="muted">Save $12 vs monthly.</div>
                     <a class="button" href="/user/subscription">Subscribe Yearly</a>
                 </div>
                 <div class="price-card">
@@ -356,7 +372,13 @@ router.get('/admin/subscriptions', requireAdmin, (req, res) => {
 });
 
 router.get('/api/paypal/status', (req, res) => {
-    return res.json({ ok: true, configured: paypalConfigured() });
+    return res.json({
+        ok: true,
+        configured: paypalConfigured(),
+        client_id: PAYPAL_CLIENT_ID,
+        mode: PAYPAL_MODE,
+        currency: PAYPAL_CURRENCY
+    });
 });
 
 router.post('/api/auth/signup', async (req, res) => {
@@ -487,7 +509,8 @@ router.post('/api/paypal/create-order', async (req, res) => {
 
         const order = await createPaypalOrder({
             amount: pricing.amount,
-            customId: record._id
+            customId: record._id,
+            description: `Subscription (${subscriptionType})`
         });
 
         store.updateSubscriptionById(record._id, {
@@ -495,9 +518,100 @@ router.post('/api/paypal/create-order', async (req, res) => {
         });
 
         const approve = (order.links || []).find(l => l.rel === 'approve');
-        return res.json({ ok: true, approve_url: approve ? approve.href : '' });
+        return res.json({ ok: true, approve_url: approve ? approve.href : '', order_id: order.id });
     } catch (err) {
         return res.status(500).json({ ok: false, error: 'PayPal order failed.' });
+    }
+});
+
+router.post('/api/paypal/create-donation-order', async (req, res) => {
+    try {
+        if (!paypalConfigured()) {
+            return res.status(400).json({ ok: false, error: 'PayPal not configured.' });
+        }
+
+        const amount = Number(req.body.amount || 0);
+        if (!Number.isFinite(amount) || amount <= 0) {
+            return res.status(400).json({ ok: false, error: 'Invalid amount.' });
+        }
+
+        const record = store.addDonation({
+            user_name: req.body.user_name,
+            discord_tag: req.body.discord_tag,
+            clan_name: req.body.clan_name,
+            amount,
+            payment_method: req.body.payment_method,
+            payment_status: 'pending',
+            payment_provider: 'paypal',
+            date: new Date().toISOString()
+        });
+
+        const order = await createPaypalOrder({
+            amount,
+            customId: record._id,
+            description: 'Donation'
+        });
+
+        store.updateDonationById(record._id, {
+            paypal_order_id: order.id
+        });
+
+        const approve = (order.links || []).find(l => l.rel === 'approve');
+        return res.json({ ok: true, approve_url: approve ? approve.href : '', order_id: order.id });
+    } catch (err) {
+        return res.status(500).json({ ok: false, error: 'PayPal order failed.' });
+    }
+});
+
+router.post('/api/paypal/capture-order', async (req, res) => {
+    try {
+        if (!paypalConfigured()) {
+            return res.status(400).json({ ok: false, error: 'PayPal not configured.' });
+        }
+
+        const orderId = (req.body.order_id || req.body.orderId || '').trim();
+        if (!orderId) return res.status(400).json({ ok: false, error: 'Missing order id.' });
+
+        const capture = await capturePaypalOrder(orderId);
+        const purchase = capture.purchase_units?.[0];
+        const captureData = purchase?.payments?.captures?.[0];
+        const amountValue = Number(captureData?.amount?.value || 0);
+        const currency = captureData?.amount?.currency_code || PAYPAL_CURRENCY;
+        const captureId = captureData?.id;
+
+        let sub = store.findSubscriptionByPaypalOrderId(orderId);
+        let donation = null;
+        if (!sub) donation = store.findDonationByPaypalOrderId?.(orderId);
+
+        if (sub) {
+            const expected = PRICING[sub.subscription_type]?.amount || 0;
+            if (currency !== PAYPAL_CURRENCY || Number(amountValue.toFixed(2)) !== Number(expected.toFixed(2))) {
+                return res.status(400).json({ ok: false, error: 'Payment amount mismatch.' });
+            }
+            store.updateSubscriptionById(sub._id, {
+                payment_status: 'active',
+                payment_date: new Date().toISOString(),
+                payment_id: captureId || sub.payment_id
+            });
+            return res.json({ ok: true, type: 'subscription' });
+        }
+
+        if (donation) {
+            const expected = Number(donation.amount || 0);
+            if (currency !== PAYPAL_CURRENCY || Number(amountValue.toFixed(2)) !== Number(expected.toFixed(2))) {
+                return res.status(400).json({ ok: false, error: 'Payment amount mismatch.' });
+            }
+            store.updateDonationById(donation._id, {
+                payment_status: 'active',
+                payment_date: new Date().toISOString(),
+                payment_id: captureId || donation.payment_id
+            });
+            return res.json({ ok: true, type: 'donation' });
+        }
+
+        return res.status(404).json({ ok: false, error: 'Order not found.' });
+    } catch (err) {
+        return res.status(500).json({ ok: false, error: 'Capture failed.' });
     }
 });
 
@@ -565,21 +679,45 @@ router.post('/api/paypal/webhook', async (req, res) => {
             const currency = body.resource?.amount?.currency_code || 'USD';
 
             let sub = null;
-            if (orderId) sub = store.findSubscriptionByPaypalOrderId(orderId);
+            let donation = null;
+            if (orderId) {
+                sub = store.findSubscriptionByPaypalOrderId(orderId);
+                if (!sub && store.findDonationByPaypalOrderId) {
+                    donation = store.findDonationByPaypalOrderId(orderId);
+                }
+            }
             const customId = body.resource?.custom_id || body.resource?.supplementary_data?.related_ids?.custom_id;
-            if (!sub && customId) sub = store.findSubscriptionById(customId);
-            if (!sub) return res.json({ ok: true });
+            if (!sub && !donation && customId) {
+                sub = store.findSubscriptionById(customId);
+                if (!sub && store.findDonationByPaypalOrderId) {
+                    donation = store.findDonationById?.(customId);
+                }
+            }
+            if (!sub && !donation) return res.json({ ok: true });
 
-            const expected = PRICING[sub.subscription_type]?.amount || 0;
-            if (currency !== 'USD' || Number(amountValue.toFixed(2)) !== Number(expected.toFixed(2))) {
-                return res.json({ ok: true });
+            if (sub) {
+                const expected = PRICING[sub.subscription_type]?.amount || 0;
+                if (currency !== PAYPAL_CURRENCY || Number(amountValue.toFixed(2)) !== Number(expected.toFixed(2))) {
+                    return res.json({ ok: true });
+                }
+                store.updateSubscriptionById(sub._id, {
+                    payment_status: 'active',
+                    payment_date: new Date().toISOString(),
+                    payment_id: captureId || sub.payment_id
+                });
             }
 
-            store.updateSubscriptionById(sub._id, {
-                payment_status: 'active',
-                payment_date: new Date().toISOString(),
-                payment_id: captureId || sub.payment_id
-            });
+            if (donation) {
+                const expected = Number(donation.amount || 0);
+                if (currency !== PAYPAL_CURRENCY || Number(amountValue.toFixed(2)) !== Number(expected.toFixed(2))) {
+                    return res.json({ ok: true });
+                }
+                store.updateDonationById(donation._id, {
+                    payment_status: 'active',
+                    payment_date: new Date().toISOString(),
+                    payment_id: captureId || donation.payment_id
+                });
+            }
         }
 
         return res.json({ ok: true });

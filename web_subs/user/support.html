@@ -42,7 +42,11 @@
                     <p class="payment-note">Need help? Contact Mazen on Discord for support.</p>
                     <a class="button" href="https://discord.com/users/1019254470191890473" target="_blank" rel="noopener">Contact Mazen</a>
                 </div>
-                <button type="submit" class="button">Support Now</button>
+                <div class="payment-info" id="donationPaypalInfo" style="display:none;">
+                    <p class="payment-note">Pay securely with PayPal or card.</p>
+                    <div id="paypalDonationButtons" class="paypal-buttons"></div>
+                </div>
+                <button type="submit" class="button" id="donationFallbackButton">Support Now</button>
             </form>
 
             <div class="card side-card">

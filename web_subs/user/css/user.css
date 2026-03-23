@@ -33,6 +33,7 @@ input:focus, select:focus {
 .payment-details { font-size: 0.95rem; line-height: 1.5; }
 .payment-details a { color: var(--accent); text-decoration: none; font-weight: 600; }
 .payment-details a:hover { text-decoration: underline; }
+.paypal-buttons { margin-top: 10px; }
 .side-card { position: sticky; top: 22px; }
 .badge-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
 .badge { border: 1px solid rgba(20,20,20,0.18); padding: 6px 12px; border-radius: 999px; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.7px; background: rgba(255, 255, 255, 0.75); color: var(--muted); }

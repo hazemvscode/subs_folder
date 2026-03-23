@@ -20,6 +20,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const PAYPAL_LINK = 'https://paypal.me/mazenabosenna';
+    const PAYPAL_STATUS_URL = '/api/paypal/status';
+    let paypalStatus = null;
 
     const formatDate = (value) => {
         if (!value) return '--';
@@ -50,6 +52,16 @@ document.addEventListener('DOMContentLoaded', () => {
         ]
     };
 
+    const updatePaymentDetailsForConfigured = (configured) => {
+        if (!configured) return;
+        paymentDetailsByMethod.paypal = [
+            'Pay with PayPal or card using the buttons below.'
+        ];
+        paymentDetailsByMethod.card = [
+            'Card payments are processed by PayPal using the buttons below.'
+        ];
+    };
+
     const updatePaymentInfo = (container) => {
         const select = container.querySelector('.payment-method');
         const details = container.querySelector('[data-role="details"]');
@@ -65,27 +77,70 @@ document.addEventListener('DOMContentLoaded', () => {
         select.addEventListener('change', () => updatePaymentInfo(block));
     });
 
+    const loadPaypalSdk = (clientId, currency) => new Promise((resolve, reject) => {
+        if (window.paypal) return resolve();
+        if (document.getElementById('paypal-sdk')) {
+            const check = setInterval(() => {
+                if (window.paypal) {
+                    clearInterval(check);
+                    resolve();
+                }
+            }, 50);
+            return;
+        }
+        const script = document.createElement('script');
+        script.id = 'paypal-sdk';
+        const params = new URLSearchParams({
+            'client-id': clientId,
+            currency: currency || 'USD',
+            intent: 'CAPTURE',
+            components: 'buttons',
+            'enable-funding': 'card'
+        });
+        script.src = `https://www.paypal.com/sdk/js?${params.toString()}`;
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error('PayPal SDK failed'));
+        document.head.appendChild(script);
+    });
+
+    const fetchPaypalStatus = async () => {
+        if (paypalStatus) return paypalStatus;
+        try {
+            const res = await fetch(PAYPAL_STATUS_URL);
+            const data = await res.json();
+            paypalStatus = data;
+            updatePaymentDetailsForConfigured(data.configured);
+            if (data.configured) {
+                document.querySelectorAll('.payment-block').forEach(block => updatePaymentInfo(block));
+            }
+            return data;
+        } catch (err) {
+            return { ok: false, configured: false };
+        }
+    };
+
     const userForm = document.getElementById('userSubForm');
     if (userForm) {
+        const fallbackButton = document.getElementById('subFallbackButton');
+        const paypalInfo = document.getElementById('subPaypalInfo');
+        const paypalContainer = document.getElementById('paypalSubscriptionButtons');
+        const paymentMethodSelect = document.getElementById('subPaymentMethod');
+
+        const togglePaypalVisibility = () => {
+            if (!paypalInfo) return;
+            const allow = !paymentMethodSelect || paymentMethodSelect.value !== 'other';
+            paypalInfo.style.display = allow ? 'block' : 'none';
+        };
+
         userForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            const statusData = await fetchPaypalStatus();
+            if (statusData.configured) {
+                alert('Please use the PayPal buttons below to complete payment.');
+                return;
+            }
             try {
-                const statusRes = await fetch('/api/paypal/status');
-                const statusData = await statusRes.json();
                 const payload = new URLSearchParams(new FormData(userForm));
-
-                if (statusData.configured) {
-                    const res = await fetch('/api/paypal/create-order', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body: payload
-                    });
-                    const data = await res.json();
-                    if (!data.ok || !data.approve_url) throw new Error(data.error || 'PayPal order failed');
-                    window.location.href = data.approve_url;
-                    return;
-                }
-
                 const res = await fetch('/api/subscriptions', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -102,12 +157,79 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('Failed to save subscription. Please try again.');
             }
         });
+
+        fetchPaypalStatus().then(statusData => {
+            if (!statusData.configured || !paypalInfo || !paypalContainer) return;
+            if (fallbackButton) fallbackButton.style.display = 'none';
+            togglePaypalVisibility();
+            if (paymentMethodSelect) {
+                paymentMethodSelect.addEventListener('change', togglePaypalVisibility);
+            }
+            loadPaypalSdk(statusData.client_id, statusData.currency)
+                .then(() => {
+                    paypalContainer.innerHTML = '';
+                    paypal.Buttons({
+                        style: { layout: 'vertical' },
+                        createOrder: async () => {
+                            if (!userForm.reportValidity()) {
+                                return Promise.reject(new Error('Invalid form'));
+                            }
+                            const payload = new URLSearchParams(new FormData(userForm));
+                            const res = await fetch('/api/paypal/create-order', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                                body: payload
+                            });
+                            const data = await res.json();
+                            if (!data.ok || !data.order_id) throw new Error(data.error || 'PayPal order failed');
+                            return data.order_id;
+                        },
+                        onApprove: async (data) => {
+                            const res = await fetch('/api/paypal/capture-order', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ order_id: data.orderID })
+                            });
+                            const out = await res.json();
+                            if (!out.ok) throw new Error(out.error || 'Capture failed');
+                            const success = document.getElementById('subSuccess');
+                            if (success) success.style.display = 'block';
+                            setTimeout(() => {
+                                window.location.href = '/user/status?paid=1';
+                            }, 600);
+                        },
+                        onError: () => {
+                            alert('PayPal payment failed. Please try again.');
+                        }
+                    }).render(paypalContainer);
+                })
+                .catch(() => {
+                    if (fallbackButton) fallbackButton.style.display = 'block';
+                    if (paypalInfo) paypalInfo.style.display = 'none';
+                });
+        });
     }
 
     const donationForm = document.getElementById('donationForm');
     if (donationForm) {
+        const fallbackButton = document.getElementById('donationFallbackButton');
+        const paypalInfo = document.getElementById('donationPaypalInfo');
+        const paypalContainer = document.getElementById('paypalDonationButtons');
+        const paymentMethodSelect = document.getElementById('donationPaymentMethod');
+
+        const togglePaypalVisibility = () => {
+            if (!paypalInfo) return;
+            const allow = !paymentMethodSelect || paymentMethodSelect.value !== 'other';
+            paypalInfo.style.display = allow ? 'block' : 'none';
+        };
+
         donationForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            const statusData = await fetchPaypalStatus();
+            if (statusData.configured) {
+                alert('Please use the PayPal buttons below to complete payment.');
+                return;
+            }
             const payload = new URLSearchParams(new FormData(donationForm));
             try {
                 const res = await fetch('/api/donations', {
@@ -122,6 +244,53 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (err) {
                 alert('Failed to save donation. Please try again.');
             }
+        });
+
+        fetchPaypalStatus().then(statusData => {
+            if (!statusData.configured || !paypalInfo || !paypalContainer) return;
+            if (fallbackButton) fallbackButton.style.display = 'none';
+            togglePaypalVisibility();
+            if (paymentMethodSelect) {
+                paymentMethodSelect.addEventListener('change', togglePaypalVisibility);
+            }
+            loadPaypalSdk(statusData.client_id, statusData.currency)
+                .then(() => {
+                    paypalContainer.innerHTML = '';
+                    paypal.Buttons({
+                        style: { layout: 'vertical' },
+                        createOrder: async () => {
+                            if (!donationForm.reportValidity()) {
+                                return Promise.reject(new Error('Invalid form'));
+                            }
+                            const payload = new URLSearchParams(new FormData(donationForm));
+                            const res = await fetch('/api/paypal/create-donation-order', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                                body: payload
+                            });
+                            const data = await res.json();
+                            if (!data.ok || !data.order_id) throw new Error(data.error || 'PayPal order failed');
+                            return data.order_id;
+                        },
+                        onApprove: async (data) => {
+                            const res = await fetch('/api/paypal/capture-order', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ order_id: data.orderID })
+                            });
+                            const out = await res.json();
+                            if (!out.ok) throw new Error(out.error || 'Capture failed');
+                            alert('Payment complete. Thank you for your support!');
+                        },
+                        onError: () => {
+                            alert('PayPal payment failed. Please try again.');
+                        }
+                    }).render(paypalContainer);
+                })
+                .catch(() => {
+                    if (fallbackButton) fallbackButton.style.display = 'block';
+                    if (paypalInfo) paypalInfo.style.display = 'none';
+                });
         });
     }
 
