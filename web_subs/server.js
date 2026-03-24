@@ -7,25 +7,9 @@ const routes = require('./routes/routes');
 
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || '0.0.0.0';
-const CANONICAL_HOST = process.env.CANONICAL_HOST || 'tactiopbot.com';
-const RAILWAY_HOST = process.env.RAILWAY_PUBLIC_DOMAIN || 'tactiopbot.up.railway.app';
-const FORCE_HTTPS = process.env.FORCE_HTTPS === 'true' || process.env.NODE_ENV === 'production';
-
-const ALLOWED_HOSTS = [CANONICAL_HOST.toLowerCase(), RAILWAY_HOST.toLowerCase()];
-
 app.set('trust proxy', 1);
 
-app.use((req, res, next) => {
-    if (!FORCE_HTTPS) return next();
-
-    const forwardedProto = (req.headers['x-forwarded-proto'] || '').toString().split(',')[0].trim();
-    const isSecure = req.secure || forwardedProto === 'https';
-    const requestHost = (req.headers.host || '').toLowerCase();
-
-    if (isSecure && ALLOWED_HOSTS.includes(requestHost)) return next();
-
-    return res.redirect(301, `https://${CANONICAL_HOST}${req.originalUrl}`);
-});
+// HTTPS is handled by Railway at the edge — no redirect middleware needed.
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/user', express.static(path.join(__dirname, 'user')));
