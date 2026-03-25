@@ -20,7 +20,7 @@ const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID || '';
 const PAYPAL_CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET || '';
 const PAYPAL_MODE = (process.env.PAYPAL_MODE || 'sandbox').toLowerCase();
 const PAYPAL_CURRENCY = (process.env.PAYPAL_CURRENCY || 'USD').toUpperCase();
-const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || 'http://localhost:3000';
+const PUBLIC_BASE_URL = (process.env.PUBLIC_BASE_URL || 'http://localhost:3000').replace(/\/$/, '');
 const PAYPAL_WEBHOOK_ID = process.env.PAYPAL_WEBHOOK_ID || '';
 const PAYPAL_API_BASE = PAYPAL_MODE === 'live'
     ? 'https://api-m.paypal.com'
@@ -342,23 +342,23 @@ router.get('/', (req, res) => {
 });
 
 router.get('/user/login', (req, res) => {
-    res.sendFile('login.html', { root: path.join(__dirname, '../user') });
+    res.sendFile('login.html', { root: __dirname + '/../user/' });
 });
 
 router.get('/user/signup', (req, res) => {
-    res.sendFile('signup.html', { root: path.join(__dirname, '../user') });
+    res.sendFile('signup.html', { root: __dirname + '/../user/' });
 });
 
 router.get('/user/subscription', (req, res) => {
-    res.sendFile('subscription.html', { root: path.join(__dirname, '../user') });
+    res.sendFile('subscription.html', { root: __dirname + '/../user/' });
 });
 
 router.get('/user/status', (req, res) => {
-    res.sendFile('status.html', { root: path.join(__dirname, '../user') });
+    res.sendFile('status.html', { root: __dirname + '/../user/' });
 });
 
 router.get('/user/support', (req, res) => {
-    res.sendFile('support.html', { root: path.join(__dirname, '../user') });
+    res.sendFile('support.html', { root: __dirname + '/../user/' });
 });
 
 router.get('/user', (req, res) => {
@@ -366,11 +366,11 @@ router.get('/user', (req, res) => {
 });
 
 router.get('/admin/dashboard', requireAdmin, (req, res) => {
-    res.sendFile('dashboard.html', { root: path.join(__dirname, '../admin') });
+    res.sendFile('dashboard.html', { root: __dirname + '/../admin/' });
 });
 
 router.get('/admin/login', (req, res) => {
-    res.sendFile('login.html', { root: __dirname + '/../admin/' });
+    res.sendFile('login.html', { root: path.join(__dirname, '../admin') });
 });
 
 router.post('/admin/login', (req, res) => {
@@ -391,11 +391,11 @@ router.post('/admin/logout', (req, res) => {
 });
 
 router.get('/admin/payments', requireAdmin, (req, res) => {
-    res.sendFile('payments.html', { root: path.join(__dirname, '../admin') });
+    res.sendFile('payments.html', { root: __dirname + '/../admin/' });
 });
 
 router.get('/admin/subscriptions', requireAdmin, (req, res) => {
-    res.sendFile('subscriptions.html', { root: path.join(__dirname, '../admin') });
+    res.sendFile('subscriptions.html', { root: __dirname + '/../admin/' });
 });
 
 router.get('/api/paypal/status', (req, res) => {
