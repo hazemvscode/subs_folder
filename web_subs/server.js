@@ -6,7 +6,6 @@ const app = express();
 const routes = require('./routes/routes');
 
 const PORT = process.env.PORT || 3000;
-const HOST = process.env.HOST || '0.0.0.0';
 app.set('trust proxy', 1);
 
 // HTTPS is handled by Railway at the edge — no redirect middleware needed.
@@ -21,7 +20,6 @@ app.use(express.json());
 
 app.use('/', routes);
 
-app.listen(PORT, HOST, () => {
-    console.log('Server started successfully');
-    console.log(`http://${HOST}:${PORT}`);
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
 });

@@ -9,9 +9,6 @@ const PRICING = {
     yearly: { amount: 60, months: 12 }
 };
 
-// Serve static images from the images directory
-router.use('/images', express.static(path.join(__dirname, '../../images')));
-
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'mazenabosenna15@gmail.com';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'hazemmazen';
 const ADMIN_COOKIE = 'admin_auth';
@@ -345,23 +342,23 @@ router.get('/', (req, res) => {
 });
 
 router.get('/user/login', (req, res) => {
-    res.sendFile('login.html', { root: __dirname + '/../user/' });
+    res.sendFile('login.html', { root: path.join(__dirname, '../user') });
 });
 
 router.get('/user/signup', (req, res) => {
-    res.sendFile('signup.html', { root: __dirname + '/../user/' });
+    res.sendFile('signup.html', { root: path.join(__dirname, '../user') });
 });
 
 router.get('/user/subscription', (req, res) => {
-    res.sendFile('subscription.html', { root: __dirname + '/../user/' });
+    res.sendFile('subscription.html', { root: path.join(__dirname, '../user') });
 });
 
 router.get('/user/status', (req, res) => {
-    res.sendFile('status.html', { root: __dirname + '/../user/' });
+    res.sendFile('status.html', { root: path.join(__dirname, '../user') });
 });
 
 router.get('/user/support', (req, res) => {
-    res.sendFile('support.html', { root: __dirname + '/../user/' });
+    res.sendFile('support.html', { root: path.join(__dirname, '../user') });
 });
 
 router.get('/user', (req, res) => {
@@ -369,7 +366,7 @@ router.get('/user', (req, res) => {
 });
 
 router.get('/admin/dashboard', requireAdmin, (req, res) => {
-    res.sendFile('dashboard.html', { root: __dirname + '/../admin/' });
+    res.sendFile('dashboard.html', { root: path.join(__dirname, '../admin') });
 });
 
 router.get('/admin/login', (req, res) => {
@@ -394,11 +391,11 @@ router.post('/admin/logout', (req, res) => {
 });
 
 router.get('/admin/payments', requireAdmin, (req, res) => {
-    res.sendFile('payments.html', { root: __dirname + '/../admin/' });
+    res.sendFile('payments.html', { root: path.join(__dirname, '../admin') });
 });
 
 router.get('/admin/subscriptions', requireAdmin, (req, res) => {
-    res.sendFile('subscriptions.html', { root: __dirname + '/../admin/' });
+    res.sendFile('subscriptions.html', { root: path.join(__dirname, '../admin') });
 });
 
 router.get('/api/paypal/status', (req, res) => {
