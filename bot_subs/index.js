@@ -34,7 +34,6 @@ client.on('interactionCreate', async interaction => {
         // Allow the authorized server to run commands without subscription check
         if (interaction.guildId === ALLOWED_SERVER_ID) {
             if (interaction.commandName === 'subs') return subsCommand(interaction, client);
-            return;
         }
 
         const now = new Date();
