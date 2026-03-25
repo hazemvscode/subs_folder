@@ -14,6 +14,7 @@ app.set('trust proxy', 1);
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/user', express.static(path.join(__dirname, 'user')));
 app.use('/admin', express.static(path.join(__dirname, 'admin')));
+app.use('/images', express.static(path.join(__dirname, '../images')));
 app.use('/api/paypal/webhook', express.raw({ type: '*/*' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
