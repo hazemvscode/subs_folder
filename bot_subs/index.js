@@ -26,20 +26,14 @@ const safeReply = async (interaction, options) => {
 client.on('interactionCreate', async interaction => {
     try {
         if (!interaction.isChatInputCommand()) return;
-        if (interaction.commandName === 'subs') return subsCommand(interaction, client);
 
         if (!interaction.guildId) {
             return safeReply(interaction, { content: 'Commands must be used inside a server.', ephemeral: true });
         }
 
-        if (interaction.guildId !== ALLOWED_SERVER_ID) {
-            return safeReply(interaction, {
-                content: 'This bot is only active for the authorized server.',
-                ephemeral: true
-            });
-        }
-
+        // Allow the authorized server to run commands without subscription check
         if (interaction.guildId === ALLOWED_SERVER_ID) {
+            if (interaction.commandName === 'subs') return subsCommand(interaction, client);
             return;
         }
 
@@ -58,6 +52,9 @@ client.on('interactionCreate', async interaction => {
                 ephemeral: true
             });
         }
+
+        // If subscription is active, allow the command
+        if (interaction.commandName === 'subs') return subsCommand(interaction, client);
     } catch (err) {
         console.error('interactionCreate error:', err);
     }

@@ -153,6 +153,16 @@ router.get('/home', (req, res) => {
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Bot Subscriptions</title>
+    
+    <!-- Icon and Social Banner -->
+    <link rel="icon" type="image/png" href="/images/icon/icon.png">
+    <meta property="og:title" content="Tactiop Bot Subscriptions">
+    <meta property="og:description" content="Clean, organized automation for serious clans.">
+    <meta property="og:image" content="/images/banner/banner.jpg">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="${PUBLIC_BASE_URL}">
+    <meta name="twitter:card" content="summary_large_image">
+
     <link rel="stylesheet" href="/blue_galaxy.css" />
     <style>
         * { box-sizing: border-box; }
@@ -189,9 +199,20 @@ router.get('/home', (req, res) => {
         @media (max-width: 720px) {
             body { padding: 28px 16px 60px; }
         }
-        @media (prefers-reduced-motion: reduce) {
-            * { animation: none !important; transition: none !important; }
+
+        /* Powerful Animations */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
         }
+        .hero h1, .hero p, .hero-actions, .hero-card, .feature, .price-card, .stat, .cta {
+            animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+        .hero-card { animation-delay: 0.2s; }
+        .feature:nth-child(1) { animation-delay: 0.3s; }
+        .feature:nth-child(2) { animation-delay: 0.4s; }
+        .feature:nth-child(3) { animation-delay: 0.5s; }
+        .feature:nth-child(4) { animation-delay: 0.6s; }
     </style>
 </head>
 <body>

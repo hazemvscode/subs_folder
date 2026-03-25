@@ -3,10 +3,22 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Login</title>
+    <title>Login | Bot Subscriptions</title>
+    <link rel="icon" type="image/png" href="/images/icon/icon.png">
+    
+    <!-- Open Graph for Social Preview -->
+    <meta property="og:title" content="Login - Bot Subscriptions">
+    <meta property="og:description" content="Secure access for players and clan members.">
+    <meta property="og:image" content="/banner.jpg">
+    <meta property="og:image" content="/images/banner/banner.jpg">
+
     <link rel="stylesheet" href="/blue_galaxy.css">
     <style>
         * { box-sizing: border-box; }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
         body {
             margin: 0;
             min-height: 100vh;
@@ -27,6 +39,7 @@
             border-radius: 20px;
             padding: 28px;
             box-shadow: var(--shadow);
+            animation: fadeInUp 0.6s ease-out both;
         }
         .card.title {
             position: relative;

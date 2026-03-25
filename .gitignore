@@ -1,3 +1,4 @@
+node_modules/
 .env
 database/store.json
 node_modules/
@@ -8,3 +9,5 @@ yarn-error.log*
 pnpm-debug.log*
 .idea/
 .vscode/
+*.log
+dist/
