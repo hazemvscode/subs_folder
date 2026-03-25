@@ -2,11 +2,15 @@ const express = require('express');
 const router = express.Router();
 const store = require('../../database/store');
 const crypto = require('crypto');
+const path = require('path');
 
 const PRICING = {
     monthly: { amount: 6, months: 1 },
     yearly: { amount: 60, months: 12 }
 };
+
+// Serve static images from the images directory
+router.use('/images', express.static(path.join(__dirname, '../../images')));
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'mazenabosenna15@gmail.com';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'hazemmazen';
@@ -158,7 +162,7 @@ router.get('/home', (req, res) => {
     <link rel="icon" type="image/png" href="/images/icon/icon.png">
     <meta property="og:title" content="Tactiop Bot Subscriptions">
     <meta property="og:description" content="Clean, organized automation for serious clans.">
-    <meta property="og:image" content="/images/banner/banner.jpg">
+    <meta property="og:image" content="${PUBLIC_BASE_URL}/images/banner/banner.jpg">
     <meta property="og:type" content="website">
     <meta property="og:url" content="${PUBLIC_BASE_URL}">
     <meta name="twitter:card" content="summary_large_image">
@@ -213,6 +217,11 @@ router.get('/home', (req, res) => {
         .feature:nth-child(2) { animation-delay: 0.4s; }
         .feature:nth-child(3) { animation-delay: 0.5s; }
         .feature:nth-child(4) { animation-delay: 0.6s; }
+
+        .feature:hover, .price-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
     </style>
 </head>
 <body>
