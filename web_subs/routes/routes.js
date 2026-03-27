@@ -24,7 +24,13 @@ const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID || '';
 const PAYPAL_CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET || '';
 const PAYPAL_MODE = (process.env.PAYPAL_MODE || 'sandbox').toLowerCase();
 const PAYPAL_CURRENCY = (process.env.PAYPAL_CURRENCY || 'USD').toUpperCase();
-const PUBLIC_BASE_URL = (process.env.PUBLIC_BASE_URL || 'http://localhost:3000').replace(/\/$/, '');
+const normalizeBaseUrl = (value) => {
+    const raw = (value || '').trim();
+    if (!raw) return 'http://localhost:3000';
+    const withProtocol = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+    return withProtocol.replace(/\/$/, '');
+};
+const PUBLIC_BASE_URL = normalizeBaseUrl(process.env.PUBLIC_BASE_URL || 'http://localhost:3000');
 const PAYPAL_WEBHOOK_ID = process.env.PAYPAL_WEBHOOK_ID || '';
 const PAYPAL_API_BASE = PAYPAL_MODE === 'live'
     ? 'https://api-m.paypal.com'
@@ -81,7 +87,10 @@ const createPaypalOrder = async ({ amount, customId, description }) => {
         })
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'PayPal order failed');
+    if (!res.ok) {
+        const issue = data?.details?.map(d => d.description).filter(Boolean).join(' | ');
+        throw new Error(issue || data.message || data.error_description || 'PayPal order failed');
+    }
     return data;
 };
 
