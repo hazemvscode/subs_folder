@@ -1,6 +1,5 @@
 require('dotenv').config();
 const { Client, GatewayIntentBits } = require('discord.js');
-const store = require('../database/store');
 const ALLOWED_SERVER_ID = process.env.ALLOWED_SERVER_ID || '1085614826233016411';
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
@@ -31,28 +30,13 @@ client.on('interactionCreate', async interaction => {
             return safeReply(interaction, { content: 'Commands must be used inside a server.', ephemeral: true });
         }
 
-        // Allow the authorized server to run commands without subscription check
-        if (interaction.guildId === ALLOWED_SERVER_ID) {
-            if (interaction.commandName === 'subs') return subsCommand(interaction, client);
-        }
-
-        const now = new Date();
-        const activeSub = store.listSubscriptions().find(s => {
-            const end = s.end_date ? new Date(s.end_date) : null;
-            return s.server_id === interaction.guildId &&
-                s.payment_status === 'active' &&
-                end && end > now &&
-                s.is_banned !== true;
-        });
-
-        if (!activeSub) {
+        if (interaction.guildId !== ALLOWED_SERVER_ID) {
             return safeReply(interaction, {
-                content: 'No active subscription found for this server. Please subscribe to unlock commands.',
+                content: `This bot only works in the allowed server: ${ALLOWED_SERVER_ID}.`,
                 ephemeral: true
             });
         }
 
-        // If subscription is active, allow the command
         if (interaction.commandName === 'subs') return subsCommand(interaction, client);
     } catch (err) {
         console.error('interactionCreate error:', err);

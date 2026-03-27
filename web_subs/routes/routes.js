@@ -3,6 +3,7 @@ const router = express.Router();
 const store = require('../../database/store');
 const crypto = require('crypto');
 const path = require('path');
+const nodemailer = require('nodemailer');
 
 const PRICING = {
     monthly: { amount: 6, months: 1 },
@@ -11,7 +12,10 @@ const PRICING = {
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'mazenabosenna15@gmail.com';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'hazemmazen';
+const TEST_USER_EMAIL = (process.env.TEST_USER_EMAIL || 'mazenabosenna15@gmail.com').toLowerCase();
+const TEST_USER_PASSWORD = process.env.TEST_USER_PASSWORD || 'hazemmazen';
 const ADMIN_COOKIE = 'admin_auth';
+const USER_EMAIL_COOKIE = 'user_email';
 const BOT_INVITE_LINK = 'https://discord.com/oauth2/authorize?client_id=1344047946638954716&scope=bot%20applications.commands&permissions=8';
 const PW_ITERATIONS = 120000;
 const PW_KEYLEN = 64;
@@ -26,6 +30,12 @@ const PAYPAL_API_BASE = PAYPAL_MODE === 'live'
     ? 'https://api-m.paypal.com'
     : 'https://api-m.sandbox.paypal.com';
 const ALLOWED_SERVER_ID = process.env.ALLOWED_SERVER_ID || '1085614826233016411';
+const SMTP_HOST = process.env.SMTP_HOST || '';
+const SMTP_PORT = Number(process.env.SMTP_PORT || 587);
+const SMTP_SECURE = String(process.env.SMTP_SECURE || '').toLowerCase() === 'true';
+const SMTP_USER = process.env.SMTP_USER || '';
+const SMTP_PASS = process.env.SMTP_PASS || '';
+const MAIL_FROM = process.env.MAIL_FROM || SMTP_USER || 'no-reply@example.com';
 
 const hashPassword = (password, salt) => {
     return crypto.pbkdf2Sync(password, salt, PW_ITERATIONS, PW_KEYLEN, PW_DIGEST).toString('hex');
@@ -119,6 +129,139 @@ const parseCookies = (cookieHeader) => {
         acc[key] = decodeURIComponent(rest.join('=') || '');
         return acc;
     }, {});
+};
+
+const setUserEmailCookie = (res, email) => {
+    res.append('Set-Cookie', `${USER_EMAIL_COOKIE}=${encodeURIComponent(email)}; Path=/; SameSite=Lax`);
+};
+
+let mailTransporter = null;
+
+const emailConfigured = () => SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_PASS;
+
+const getMailTransporter = () => {
+    if (!emailConfigured()) return null;
+    if (mailTransporter) return mailTransporter;
+    mailTransporter = nodemailer.createTransport({
+        host: SMTP_HOST,
+        port: SMTP_PORT,
+        secure: SMTP_SECURE,
+        auth: {
+            user: SMTP_USER,
+            pass: SMTP_PASS
+        }
+    });
+    return mailTransporter;
+};
+
+const sendSubscriptionSuccessEmail = async (subscription) => {
+    if (!subscription?.payer_email || !emailConfigured() || subscription.purchase_email_sent_at) {
+        return false;
+    }
+
+    const transporter = getMailTransporter();
+    if (!transporter) return false;
+
+    const plan = subscription.subscription_type === 'yearly' ? 'yearly' : 'monthly';
+    const subject = `Your ${plan} bot subscription is active`;
+    const lines = [
+        `Hello${subscription.user_name ? ` ${subscription.user_name}` : ''},`,
+        '',
+        `You have successfully bought the ${plan} subscription.`,
+        '',
+        ...(PAYPAL_MODE === 'sandbox' ? [
+            'Note: this is test servers, means that you did not send any real money.',
+            ''
+        ] : []),
+        'Here is your bot invite link:',
+        BOT_INVITE_LINK,
+        '',
+        'If you already have the bot, you can ignore the invite link.',
+        '',
+        `Allowed server ID: ${ALLOWED_SERVER_ID}`,
+        '',
+        'Thank you for your support.'
+    ];
+
+    await transporter.sendMail({
+        from: MAIL_FROM,
+        to: subscription.payer_email,
+        subject,
+        text: lines.join('\n')
+    });
+
+    store.updateSubscriptionById(subscription._id, {
+        purchase_email_sent_at: new Date().toISOString()
+    });
+    return true;
+};
+
+const sendAdminPurchaseEmail = async (subscription) => {
+    if (!emailConfigured() || !ADMIN_EMAIL || subscription.admin_email_sent_at) {
+        return false;
+    }
+
+    const transporter = getMailTransporter();
+    if (!transporter) return false;
+
+    const plan = subscription.subscription_type === 'yearly' ? 'yearly' : 'monthly';
+    const subject = `Payment successful: ${plan} subscription`;
+    const lines = [
+        'A customer completed a successful payment on your website.',
+        '',
+        `Plan: ${plan}`,
+        `Amount: ${subscription.amount ?? ''} ${PAYPAL_CURRENCY}`,
+        `Payment ID: ${subscription.payment_id || 'N/A'}`,
+        `Payment Date: ${subscription.payment_date || new Date().toISOString()}`,
+        ...(PAYPAL_MODE === 'sandbox' ? [
+            'Note: this is test servers, means that you did not get any money.',
+            ''
+        ] : []),
+        `Name: ${subscription.user_name || 'N/A'}`,
+        `Email: ${subscription.payer_email || 'N/A'}`,
+        `Discord Name: ${subscription.discord_tag || 'N/A'}`,
+        `Discord ID: ${subscription.discord_id || 'N/A'}`,
+        `Game ID: ${subscription.tacticool_id || 'N/A'}`,
+        `Clan Name: ${subscription.clan_name || 'N/A'}`,
+        `Server ID: ${subscription.server_id || 'N/A'}`,
+        '',
+        `The customer paid to you ${plan} successfully.`
+    ];
+
+    await transporter.sendMail({
+        from: MAIL_FROM,
+        to: ADMIN_EMAIL,
+        subject,
+        text: lines.join('\n')
+    });
+
+    store.updateSubscriptionById(subscription._id, {
+        admin_email_sent_at: new Date().toISOString()
+    });
+    return true;
+};
+
+const activateSubscriptionAndNotify = async (subscription, paymentId, extraUpdates = {}) => {
+    const updated = store.updateSubscriptionById(subscription._id, {
+        payment_status: 'active',
+        payment_date: new Date().toISOString(),
+        payment_id: paymentId || subscription.payment_id,
+        ...extraUpdates
+    });
+
+    try {
+        await sendSubscriptionSuccessEmail(updated);
+    } catch (err) {
+        console.error('Failed to send subscription email:', err.message || err);
+    }
+
+    try {
+        await sendAdminPurchaseEmail(updated);
+    } catch (err) {
+        console.error('Failed to send admin payment email:', err.message || err);
+    }
+
+    return updated;
 };
 
 const isAdminAuthed = (req) => {
@@ -361,6 +504,10 @@ router.get('/user/support', (req, res) => {
     res.sendFile('support.html', { root: path.join(__dirname, '../user') });
 });
 
+router.get('/user/test-account', (req, res) => {
+    res.sendFile('test-account.html', { root: path.join(__dirname, '../user') });
+});
+
 router.get('/user', (req, res) => {
     res.redirect('/user/login');
 });
@@ -446,6 +593,24 @@ router.post('/api/auth/login', async (req, res) => {
             return res.status(400).json({ ok: false, error: 'Missing fields.' });
         }
 
+        if (email === TEST_USER_EMAIL && password === TEST_USER_PASSWORD) {
+            setUserEmailCookie(res, email);
+            store.addLoginEvent({
+                email,
+                user_id: 'test-user',
+                ip: req.ip,
+                user_agent: req.headers['user-agent'] || '',
+                date: new Date().toISOString(),
+                source: 'test-account'
+            });
+
+            return res.json({
+                ok: true,
+                redirect: '/user/test-account',
+                account_name: 'Test User Account'
+            });
+        }
+
         const user = store.findUserByEmail(email);
         if (!user || !user.password_hash || !user.salt) {
             return res.status(401).json({ ok: false, error: 'Invalid credentials.' });
@@ -456,6 +621,7 @@ router.post('/api/auth/login', async (req, res) => {
             return res.status(401).json({ ok: false, error: 'Invalid credentials.' });
         }
 
+        setUserEmailCookie(res, email);
         store.addLoginEvent({
             email,
             user_id: user._id,
@@ -464,7 +630,7 @@ router.post('/api/auth/login', async (req, res) => {
             date: new Date().toISOString()
         });
 
-        return res.json({ ok: true });
+        return res.json({ ok: true, redirect: '/home' });
     } catch (err) {
         return res.status(500).json({ ok: false, error: 'Server error.' });
     }
@@ -478,6 +644,9 @@ router.post('/api/subscriptions', async (req, res) => {
             return res.status(400).json({ ok: false, error: 'Invalid subscription type.' });
         }
 
+        const cookies = parseCookies(req.headers.cookie || '');
+        const payerEmail = (cookies[USER_EMAIL_COOKIE] || req.body.email || '').trim().toLowerCase();
+
         const now = new Date();
         const endDate = addMonths(now, pricing.months);
 
@@ -490,6 +659,7 @@ router.post('/api/subscriptions', async (req, res) => {
             server_id: req.body.server_id,
             subscription_type: subscriptionType,
             amount: pricing.amount,
+            payer_email: payerEmail,
             payment_method: req.body.payment_method,
             start_date: now.toISOString(),
             end_date: endDate.toISOString(),
@@ -514,6 +684,9 @@ router.post('/api/paypal/create-order', async (req, res) => {
             return res.status(400).json({ ok: false, error: 'Invalid subscription type.' });
         }
 
+        const cookies = parseCookies(req.headers.cookie || '');
+        const payerEmail = (cookies[USER_EMAIL_COOKIE] || req.body.email || '').trim().toLowerCase();
+
         const now = new Date();
         const endDate = addMonths(now, pricing.months);
 
@@ -526,6 +699,7 @@ router.post('/api/paypal/create-order', async (req, res) => {
             server_id: req.body.server_id,
             subscription_type: subscriptionType,
             amount: pricing.amount,
+            payer_email: payerEmail,
             payment_method: req.body.payment_method,
             start_date: now.toISOString(),
             end_date: endDate.toISOString(),
@@ -615,11 +789,7 @@ router.post('/api/paypal/capture-order', async (req, res) => {
             if (currency !== PAYPAL_CURRENCY || Number(amountValue.toFixed(2)) !== Number(expected.toFixed(2))) {
                 return res.status(400).json({ ok: false, error: 'Payment amount mismatch.' });
             }
-            store.updateSubscriptionById(sub._id, {
-                payment_status: 'active',
-                payment_date: new Date().toISOString(),
-                payment_id: captureId || sub.payment_id
-            });
+            await activateSubscriptionAndNotify(sub, captureId);
             return res.json({ ok: true, type: 'subscription' });
         }
 
@@ -727,11 +897,7 @@ router.post('/api/paypal/webhook', async (req, res) => {
                 if (currency !== PAYPAL_CURRENCY || Number(amountValue.toFixed(2)) !== Number(expected.toFixed(2))) {
                     return res.json({ ok: true });
                 }
-                store.updateSubscriptionById(sub._id, {
-                    payment_status: 'active',
-                    payment_date: new Date().toISOString(),
-                    payment_id: captureId || sub.payment_id
-                });
+                await activateSubscriptionAndNotify(sub, captureId);
             }
 
             if (donation) {
@@ -897,9 +1063,7 @@ router.post('/api/admin/payments/:type/:id/confirm', requireAdmin, async (req, r
             const pricing = PRICING[sub.subscription_type] || PRICING.monthly;
             const startDate = sub.start_date || paymentDate;
             const endDate = sub.end_date || addMonths(new Date(startDate), pricing.months).toISOString();
-            store.updateSubscriptionById(id, {
-                payment_status: 'active',
-                payment_id: paymentId || sub.payment_id,
+            await activateSubscriptionAndNotify(sub, paymentId || sub.payment_id, {
                 payment_date: paymentDate,
                 start_date: startDate,
                 end_date: endDate

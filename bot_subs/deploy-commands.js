@@ -3,7 +3,7 @@ const { REST, Routes } = require('discord.js');
 
 const token = process.env.BOT_TOKEN;
 const clientId = process.env.CLIENT_ID;
-const guildId = process.env.GUILD_ID;
+const guildId = process.env.GUILD_ID || process.env.ALLOWED_SERVER_ID || '1085614826233016411';
 
 if (!token || !clientId) {
     console.error('Missing BOT_TOKEN or CLIENT_ID environment variables.');
@@ -22,13 +22,8 @@ const rest = new REST({ version: '10' }).setToken(token);
 (async () => {
     try {
         console.log('Registering slash commands...');
-        if (guildId) {
-            await rest.put(Routes.applicationGuildCommands(clientId, guildId), { body: commands });
-            console.log('Registered guild slash commands.');
-        } else {
-            await rest.put(Routes.applicationCommands(clientId), { body: commands });
-            console.log('Registered global slash commands. This can take up to 1 hour to appear.');
-        }
+        await rest.put(Routes.applicationGuildCommands(clientId, guildId), { body: commands });
+        console.log(`Registered guild slash commands for ${guildId}.`);
     } catch (error) {
         console.error(error);
         process.exit(1);

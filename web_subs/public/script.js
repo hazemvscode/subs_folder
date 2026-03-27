@@ -307,7 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 const data = await res.json();
                 if (!data.ok) throw new Error(data.error || 'Request failed');
-                window.location.href = '/home';
+                window.location.href = data.redirect || '/home';
             } catch (err) {
                 alert('Login failed. Please try again.');
             }

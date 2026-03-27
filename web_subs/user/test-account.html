@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test User Account</title>
+    <link rel="stylesheet" href="/user/css/user.css">
+    <link rel="stylesheet" href="/blue_galaxy.css">
+</head>
+<body>
+    <div class="wrap">
+        <div class="page-header">
+            <h1 class="neon-text">Test User Account</h1>
+            <p class="intro">You are logged in with the test account. From here you can open the subscription page and send payment using the PayPal button directly on the website.</p>
+            <div class="badge-row">
+                <div class="badge">Test Login</div>
+                <div class="badge">PayPal Button</div>
+                <div class="badge">Card Supported</div>
+            </div>
+            <button class="button secondary inline" type="button" data-action="toggle-theme">Dark Mode</button>
+        </div>
+
+        <div class="page-grid">
+            <div class="card">
+                <h2>Account Status</h2>
+                <div class="payment-info">
+                    <p class="payment-note">Logged in as:</p>
+                    <strong>Test User Account</strong>
+                    <div style="margin-top:8px;">Email: mazenabosenna15@gmail.com</div>
+                </div>
+                <div class="payment-info">
+                    <p class="payment-note">Next step</p>
+                    <div>Open the payment page and use the PayPal button to send the money on-site.</div>
+                </div>
+                <a class="button" href="/user/subscription">Open Subscription Payment</a>
+                <a class="button secondary" href="/user/support">Open Support Payment</a>
+            </div>
+
+            <div class="card side-card">
+                <h2>How Payment Works</h2>
+                <ul class="list">
+                    <li>Choose PayPal or Card on the form.</li>
+                    <li>Use the PayPal button shown under the form.</li>
+                    <li>The payment is captured and stored in your site.</li>
+                    <li>After success, open the status page to continue.</li>
+                </ul>
+                <a class="button" href="/user/status">Check Payment Status</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="/script.js"></script>
+</body>
+</html>
