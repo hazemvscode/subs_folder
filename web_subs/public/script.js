@@ -125,6 +125,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const paypalInfo = document.getElementById('subPaypalInfo');
         const paypalContainer = document.getElementById('paypalSubscriptionButtons');
         const paymentMethodSelect = document.getElementById('subPaymentMethod');
+        let paypalButtonsReady = false;
 
         const togglePaypalVisibility = () => {
             if (!paypalInfo) return;
@@ -136,8 +137,25 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const statusData = await fetchPaypalStatus();
             if (statusData.configured) {
-                alert('Please use the PayPal buttons below to complete payment.');
-                return;
+                if (paypalButtonsReady) {
+                    alert('Please use the PayPal buttons below to complete payment.');
+                    return;
+                }
+                try {
+                    const payload = new URLSearchParams(new FormData(userForm));
+                    const res = await fetch('/api/paypal/create-order', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: payload
+                    });
+                    const data = await res.json();
+                    if (!data.ok || !data.approve_url) throw new Error(data.error || 'PayPal order failed');
+                    window.location.href = data.approve_url;
+                    return;
+                } catch (err) {
+                    alert('Failed to start PayPal checkout. Please try again.');
+                    return;
+                }
             }
             try {
                 const payload = new URLSearchParams(new FormData(userForm));
@@ -167,6 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             loadPaypalSdk(statusData.client_id, statusData.currency)
                 .then(() => {
+                    paypalButtonsReady = true;
                     paypalContainer.innerHTML = '';
                     paypal.Buttons({
                         style: { layout: 'vertical' },
@@ -204,8 +223,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     }).render(paypalContainer);
                 })
                 .catch(() => {
+                    paypalButtonsReady = false;
                     if (fallbackButton) fallbackButton.style.display = 'block';
-                    if (paypalInfo) paypalInfo.style.display = 'none';
                 });
         });
     }
@@ -216,6 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const paypalInfo = document.getElementById('donationPaypalInfo');
         const paypalContainer = document.getElementById('paypalDonationButtons');
         const paymentMethodSelect = document.getElementById('donationPaymentMethod');
+        let paypalButtonsReady = false;
 
         const togglePaypalVisibility = () => {
             if (!paypalInfo) return;
@@ -227,8 +247,25 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const statusData = await fetchPaypalStatus();
             if (statusData.configured) {
-                alert('Please use the PayPal buttons below to complete payment.');
-                return;
+                if (paypalButtonsReady) {
+                    alert('Please use the PayPal buttons below to complete payment.');
+                    return;
+                }
+                try {
+                    const payload = new URLSearchParams(new FormData(donationForm));
+                    const res = await fetch('/api/paypal/create-donation-order', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: payload
+                    });
+                    const data = await res.json();
+                    if (!data.ok || !data.approve_url) throw new Error(data.error || 'PayPal order failed');
+                    window.location.href = data.approve_url;
+                    return;
+                } catch (err) {
+                    alert('Failed to start PayPal checkout. Please try again.');
+                    return;
+                }
             }
             const payload = new URLSearchParams(new FormData(donationForm));
             try {
@@ -255,6 +292,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             loadPaypalSdk(statusData.client_id, statusData.currency)
                 .then(() => {
+                    paypalButtonsReady = true;
                     paypalContainer.innerHTML = '';
                     paypal.Buttons({
                         style: { layout: 'vertical' },
@@ -288,8 +326,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     }).render(paypalContainer);
                 })
                 .catch(() => {
+                    paypalButtonsReady = false;
                     if (fallbackButton) fallbackButton.style.display = 'block';
-                    if (paypalInfo) paypalInfo.style.display = 'none';
                 });
         });
     }
