@@ -22,8 +22,13 @@ const rest = new REST({ version: '10' }).setToken(token);
 (async () => {
     try {
         console.log('Registering slash commands...');
-        await rest.put(Routes.applicationGuildCommands(clientId, guildId), { body: commands });
-        console.log(`Registered guild slash commands for ${guildId}.`);
+        await rest.put(Routes.applicationCommands(clientId), { body: commands });
+        console.log('Registered global slash commands.');
+
+        if (guildId) {
+            await rest.put(Routes.applicationGuildCommands(clientId, guildId), { body: [] });
+            console.log(`Cleared guild-only slash commands for ${guildId}.`);
+        }
     } catch (error) {
         console.error(error);
         process.exit(1);
