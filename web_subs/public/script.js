@@ -53,12 +53,11 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const updatePaymentDetailsForConfigured = (configured) => {
-        if (!configured) return;
         paymentDetailsByMethod.paypal = [
-            'Pay with PayPal or card using the buttons below.'
+            'You will open PayPal.Me and send the exact amount there.'
         ];
         paymentDetailsByMethod.card = [
-            'Card payments are processed by PayPal using the buttons below.'
+            'Card payments are handled on PayPal.Me if available in your region.'
         ];
     };
 
@@ -128,117 +127,99 @@ document.addEventListener('DOMContentLoaded', () => {
     if (userForm) {
         const fallbackButton = document.getElementById('subFallbackButton');
         const paypalInfo = document.getElementById('subPaypalInfo');
-        const paypalContainer = document.getElementById('paypalSubscriptionButtons');
+        const paypalSummary = document.getElementById('subPaypalSummary');
         const paymentMethodSelect = document.getElementById('subPaymentMethod');
-        let paypalButtonsReady = false;
+        const claimInfo = document.getElementById('subClaimInfo');
+        const claimButton = document.getElementById('subClaimButton');
+        const statusLink = document.getElementById('subStatusLink');
+        let currentClaimToken = null;
+
+        const getSelectedPlan = () => (userForm.querySelector('[name="subscription_type"]')?.value || 'monthly').toLowerCase();
+        const getSelectedAmount = () => getSelectedPlan() === 'yearly' ? 60 : 6;
+        const getPaypalMeUrl = () => `${PAYPAL_LINK}/${getSelectedAmount()}`;
 
         const togglePaypalVisibility = () => {
             if (!paypalInfo) return;
             const allow = !paymentMethodSelect || paymentMethodSelect.value !== 'other';
             paypalInfo.style.display = allow ? 'block' : 'none';
+            if (!allow && claimInfo) claimInfo.style.display = 'none';
+        };
+
+        const refreshPaypalSummary = () => {
+            if (!paypalSummary) return;
+            const amount = getSelectedAmount();
+            paypalSummary.innerHTML = `
+                <div>Exact amount to send: <strong>$${amount}</strong></div>
+                <div>PayPal.Me link: <a href="${getPaypalMeUrl()}" target="_blank" rel="noopener">${getPaypalMeUrl().replace('https://', '')}</a></div>
+                <div>After sending, come back here and press <strong>I Sent The Money</strong>.</div>
+            `;
         };
 
         userForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const statusData = await fetchPaypalStatus();
-            if (statusData.configured) {
-                if (paypalButtonsReady) {
-                    alert('Please use the PayPal buttons below to complete payment.');
-                    return;
-                }
-                try {
-                    const payload = new URLSearchParams(new FormData(userForm));
-                    const res = await fetch('/api/paypal/create-order', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body: payload
-                    });
-                    const data = await res.json();
-                    if (!data.ok || !data.approve_url) throw new Error(data.error || 'PayPal order failed');
-                    window.location.href = data.approve_url;
-                    return;
-                } catch (err) {
-                    alert(err.message || 'Failed to start PayPal checkout. Please try again.');
-                    return;
-                }
-            }
             try {
                 const payload = new URLSearchParams(new FormData(userForm));
-                const res = await fetch('/api/subscriptions', {
+                const res = await fetch('/api/subscriptions/start-paypalme', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: payload
                 });
                 const data = await res.json();
                 if (!data.ok) throw new Error(data.error || 'Request failed');
-
-                const success = document.getElementById('subSuccess');
-                if (success) success.style.display = 'block';
-
-                window.location.href = PAYPAL_LINK;
+                currentClaimToken = data.claim_token;
+                if (claimInfo) claimInfo.style.display = 'block';
+                const popup = window.open(data.paypal_url || getPaypalMeUrl(), '_blank', 'noopener');
+                if (!popup) {
+                    window.location.href = data.paypal_url || getPaypalMeUrl();
+                    return;
+                }
             } catch (err) {
-                alert('Failed to save subscription. Please try again.');
+                alert(err.message || 'Failed to start PayPal.Me payment.');
             }
         });
 
-        fetchPaypalStatus().then(statusData => {
-            if (!statusData.configured || !paypalInfo || !paypalContainer) return;
-            if (fallbackButton) fallbackButton.style.display = 'none';
-            togglePaypalVisibility();
-            if (paymentMethodSelect) {
-                paymentMethodSelect.addEventListener('change', togglePaypalVisibility);
-            }
-            loadPaypalSdk(statusData.client_id, statusData.currency)
-                .then(() => {
-                    paypalButtonsReady = true;
-                    paypalContainer.innerHTML = '';
-                    paypal.Buttons({
-                        style: { layout: 'vertical' },
-                        createOrder: async (data, actions) => {
-                            if (!userForm.reportValidity()) {
-                                return Promise.reject(new Error('Invalid form'));
-                            }
-                            return actions.order.create({
-                                purchase_units: [{
-                                    amount: {
-                                        currency_code: statusData.currency || 'USD',
-                                        value: getSubscriptionAmount(userForm)
-                                    },
-                                    description: `Subscription (${userForm.querySelector('[name="subscription_type"]')?.value || 'monthly'})`
-                                }]
-                            });
-                        },
-                        onApprove: async (data, actions) => {
-                            const details = await actions.order.capture();
-                            const capture = details?.purchase_units?.[0]?.payments?.captures?.[0];
-                            const payload = new URLSearchParams(new FormData(userForm));
-                            payload.set('order_id', data.orderID || details.id || '');
-                            payload.set('payment_id', capture?.id || '');
-                            payload.set('amount', capture?.amount?.value || getSubscriptionAmount(userForm));
-                            payload.set('currency', capture?.amount?.currency_code || statusData.currency || 'USD');
-                            const res = await fetch('/api/paypal/complete-subscription', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                                body: payload
-                            });
-                            const out = await res.json();
-                            if (!out.ok) throw new Error(out.error || 'Payment completion failed');
-                            const success = document.getElementById('subSuccess');
-                            if (success) success.style.display = 'block';
-                            setTimeout(() => {
-                                window.location.href = '/user/status?paid=1';
-                            }, 600);
-                        },
-                        onError: (err) => {
-                            alert(err?.message || 'PayPal payment failed. Please try again.');
-                        }
-                    }).render(paypalContainer);
-                })
-                .catch(() => {
-                    paypalButtonsReady = false;
-                    if (fallbackButton) fallbackButton.style.display = 'block';
-                });
-        });
+        if (paymentMethodSelect) {
+            paymentMethodSelect.addEventListener('change', togglePaypalVisibility);
+        }
+        userForm.querySelector('[name="subscription_type"]')?.addEventListener('change', refreshPaypalSummary);
+        togglePaypalVisibility();
+        refreshPaypalSummary();
+        if (fallbackButton) fallbackButton.style.display = 'block';
+
+        if (claimButton) {
+            claimButton.addEventListener('click', async () => {
+                if (!currentClaimToken) {
+                    alert('Open PayPal.Me first, then come back and click this button.');
+                    return;
+                }
+                try {
+                    const payload = new URLSearchParams();
+                    payload.set('claim_token', currentClaimToken);
+                    const res = await fetch('/api/subscriptions/claim-paypalme', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: payload
+                    });
+                    const data = await res.json();
+                    if (!data.ok) throw new Error(data.error || 'Failed to unlock access.');
+                    const success = document.getElementById('subSuccess');
+                    const successText = document.getElementById('subSuccessText');
+                    if (successText) {
+                        successText.textContent = `Temporary access unlocked for ${data.claim_hours} hours. Admin can still cancel it later if payment was fake or wrong.`;
+                    }
+                    if (statusLink) {
+                        const query = new URLSearchParams({
+                            server_id: data.server_id || '',
+                            discord_id: data.discord_id || ''
+                        });
+                        statusLink.href = `/user/status?${query.toString()}`;
+                    }
+                    if (success) success.style.display = 'block';
+                } catch (err) {
+                    alert(err.message || 'Failed to unlock temporary access.');
+                }
+            });
+        }
     }
 
     const donationForm = document.getElementById('donationForm');
@@ -395,6 +376,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const statusForm = document.getElementById('statusForm');
     if (statusForm) {
+        const params = new URLSearchParams(window.location.search);
+        const discordInput = statusForm.querySelector('[name="discord_id"]');
+        const serverInput = statusForm.querySelector('[name="server_id"]');
+        if (discordInput && params.get('discord_id')) discordInput.value = params.get('discord_id');
+        if (serverInput && params.get('server_id')) serverInput.value = params.get('server_id');
+
         statusForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const payload = new URLSearchParams(new FormData(statusForm));
@@ -414,7 +401,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (link) link.style.display = 'none';
                     return;
                 }
-                if (text) text.textContent = 'Payment confirmed! You can invite the bot now.';
+                if (text) {
+                    text.textContent = data.provisional
+                        ? 'Temporary access unlocked. You can invite the bot now while payment is being checked.'
+                        : 'Payment confirmed! You can invite the bot now.';
+                }
                 if (link) {
                     link.href = data.invite;
                     link.style.display = 'inline-block';
@@ -542,8 +533,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         <td>${formatDate(p.payment_date)}</td>
                         <td>${p.payment_id || '--'}</td>
                         <td>
-                            <button class="button" data-action="confirm" data-id="${p._id}" data-type="${p.type}">Confirm</button>
-                            <button class="button" data-action="pending" data-id="${p._id}" data-type="${p.type}">Pending</button>
+                            <button class="button" data-action="confirm" data-id="${p._id}" data-type="${p.type}">Confirm Paid</button>
+                            <button class="button" data-action="pending" data-id="${p._id}" data-type="${p.type}">Cancel Access</button>
                         </td>
                     </tr>
                 `).join('');

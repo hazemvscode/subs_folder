@@ -42,9 +42,28 @@ const SMTP_SECURE = String(process.env.SMTP_SECURE || '').toLowerCase() === 'tru
 const SMTP_USER = process.env.SMTP_USER || '';
 const SMTP_PASS = process.env.SMTP_PASS || '';
 const MAIL_FROM = process.env.MAIL_FROM || SMTP_USER || 'no-reply@example.com';
+const PAYPAL_ME_LINK = (process.env.PAYPAL_ME_LINK || 'https://paypal.me/mazenabosenna').replace(/\/$/, '');
+const CLAIM_ACCESS_HOURS = Number(process.env.CLAIM_ACCESS_HOURS || 24);
 
 const hashPassword = (password, salt) => {
     return crypto.pbkdf2Sync(password, salt, PW_ITERATIONS, PW_KEYLEN, PW_DIGEST).toString('hex');
+};
+
+const isClaimAccessValid = (sub, now = new Date()) => {
+    if (!sub || sub.payment_status !== 'claimed') return false;
+    const claimedAt = sub.payment_claimed_at ? new Date(sub.payment_claimed_at) : null;
+    const end = sub.end_date ? new Date(sub.end_date) : null;
+    if (!claimedAt || Number.isNaN(claimedAt.getTime())) return false;
+    if (!end || Number.isNaN(end.getTime()) || end <= now) return false;
+    const validUntil = new Date(claimedAt.getTime() + (CLAIM_ACCESS_HOURS * 60 * 60 * 1000));
+    return validUntil > now;
+};
+
+const hasSubscriptionAccess = (sub, now = new Date()) => {
+    if (!sub || sub.is_banned === true) return false;
+    const end = sub.end_date ? new Date(sub.end_date) : null;
+    if (!end || Number.isNaN(end.getTime()) || end <= now) return false;
+    return sub.payment_status === 'active' || isClaimAccessValid(sub, now);
 };
 
 const paypalConfigured = () => PAYPAL_CLIENT_ID && PAYPAL_CLIENT_SECRET;
@@ -246,6 +265,38 @@ const sendAdminPurchaseEmail = async (subscription) => {
 
     store.updateSubscriptionById(subscription._id, {
         admin_email_sent_at: new Date().toISOString()
+    });
+    return true;
+};
+
+const sendAdminClaimEmail = async (subscription) => {
+    if (!emailConfigured() || !ADMIN_EMAIL) return false;
+    const transporter = getMailTransporter();
+    if (!transporter) return false;
+
+    const plan = subscription.subscription_type === 'yearly' ? 'yearly' : 'monthly';
+    const lines = [
+        'A user claimed they sent a PayPal.Me payment and temporary access was unlocked.',
+        '',
+        `Plan: ${plan}`,
+        `Expected Amount: ${subscription.amount ?? ''} USD`,
+        `Name: ${subscription.user_name || 'N/A'}`,
+        `Email: ${subscription.payer_email || 'N/A'}`,
+        `Discord Name: ${subscription.discord_tag || 'N/A'}`,
+        `Discord ID: ${subscription.discord_id || 'N/A'}`,
+        `Game ID: ${subscription.tacticool_id || 'N/A'}`,
+        `Clan Name: ${subscription.clan_name || 'N/A'}`,
+        `Server ID: ${subscription.server_id || 'N/A'}`,
+        '',
+        `Temporary access window: ${CLAIM_ACCESS_HOURS} hours`,
+        'Please verify the PayPal payment manually and then confirm or cancel access in admin.'
+    ];
+
+    await transporter.sendMail({
+        from: MAIL_FROM,
+        to: ADMIN_EMAIL,
+        subject: `Payment claim pending verification: ${plan}`,
+        text: lines.join('\n')
     });
     return true;
 };
@@ -681,6 +732,90 @@ router.post('/api/subscriptions', async (req, res) => {
     }
 });
 
+router.post('/api/subscriptions/start-paypalme', async (req, res) => {
+    try {
+        const subscriptionType = (req.body.subscription_type || '').toLowerCase().trim();
+        const pricing = PRICING[subscriptionType];
+        if (!pricing) {
+            return res.status(400).json({ ok: false, error: 'Invalid subscription type.' });
+        }
+
+        const cookies = parseCookies(req.headers.cookie || '');
+        const payerEmail = (cookies[USER_EMAIL_COOKIE] || req.body.email || '').trim().toLowerCase();
+        const now = new Date();
+        const endDate = addMonths(now, pricing.months);
+        const claimToken = crypto.randomBytes(18).toString('hex');
+
+        const record = store.addSubscription({
+            user_name: req.body.user_name,
+            discord_tag: req.body.discord_tag,
+            discord_id: req.body.discord_id,
+            tacticool_id: req.body.tacticool_id,
+            clan_name: req.body.clan_name,
+            server_id: req.body.server_id,
+            subscription_type: subscriptionType,
+            amount: pricing.amount,
+            payer_email: payerEmail,
+            payment_method: 'paypal_me',
+            payment_provider: 'paypal_me',
+            payment_status: 'pending',
+            payment_claim_token: claimToken,
+            start_date: now.toISOString(),
+            end_date: endDate.toISOString(),
+            join_date: now.toISOString()
+        });
+
+        return res.json({
+            ok: true,
+            claim_token: claimToken,
+            paypal_url: `${PAYPAL_ME_LINK}/${pricing.amount}`,
+            amount: pricing.amount,
+            item_id: record._id
+        });
+    } catch (err) {
+        return res.status(500).json({ ok: false, error: 'Failed to start PayPal payment.' });
+    }
+});
+
+router.post('/api/subscriptions/claim-paypalme', async (req, res) => {
+    try {
+        const claimToken = (req.body.claim_token || '').trim();
+        if (!claimToken) {
+            return res.status(400).json({ ok: false, error: 'Missing claim token.' });
+        }
+
+        const sub = store.listSubscriptions().find(s => s.payment_claim_token === claimToken);
+        if (!sub) {
+            return res.status(404).json({ ok: false, error: 'Payment request not found.' });
+        }
+
+        if (sub.is_banned === true) {
+            return res.status(403).json({ ok: false, error: 'This subscription is banned.' });
+        }
+
+        const updated = store.updateSubscriptionById(sub._id, {
+            payment_status: 'claimed',
+            payment_claimed_at: new Date().toISOString()
+        });
+
+        try {
+            await sendAdminClaimEmail(updated);
+        } catch (err) {
+            console.error('Failed to send admin claim email:', err.message || err);
+        }
+
+        return res.json({
+            ok: true,
+            invite: BOT_INVITE_LINK,
+            server_id: updated.server_id,
+            discord_id: updated.discord_id,
+            claim_hours: CLAIM_ACCESS_HOURS
+        });
+    } catch (err) {
+        return res.status(500).json({ ok: false, error: 'Failed to claim access.' });
+    }
+});
+
 router.post('/api/paypal/create-order', async (req, res) => {
     try {
         if (!paypalConfigured()) {
@@ -936,19 +1071,19 @@ router.post('/api/subscriptions/check', async (req, res) => {
 
         const now = new Date();
         const match = store.listSubscriptions().find(s => {
-            const end = s.end_date ? new Date(s.end_date) : null;
             const okId = (discordId && s.discord_id === discordId) || (serverId && s.server_id === serverId);
-            return okId &&
-                s.payment_status === 'active' &&
-                end && end > now &&
-                s.is_banned !== true;
+            return okId && hasSubscriptionAccess(s, now);
         });
 
         if (!match) {
             return res.json({ ok: false, error: 'No active subscription found yet.' });
         }
 
-        return res.json({ ok: true, invite: BOT_INVITE_LINK });
+        return res.json({
+            ok: true,
+            invite: BOT_INVITE_LINK,
+            provisional: match.payment_status === 'claimed'
+        });
     } catch (err) {
         return res.status(500).json({ ok: false, error: 'Server error.' });
     }
@@ -1059,12 +1194,7 @@ router.get('/api/admin/subscriptions', requireAdmin, async (req, res) => {
     try {
         const now = new Date();
         const subs = store.listSubscriptions()
-            .filter(s => {
-                const end = s.end_date ? new Date(s.end_date) : null;
-                return s.payment_status === 'active' &&
-                    end && end > now &&
-                    s.is_banned !== true;
-            })
+            .filter(s => hasSubscriptionAccess(s, now))
             .sort((a, b) => new Date(a.end_date || 0) - new Date(b.end_date || 0));
         return res.json(subs);
     } catch (err) {

@@ -1,6 +1,8 @@
 require('dotenv').config();
 const { Client, GatewayIntentBits } = require('discord.js');
+const store = require('../database/store');
 const ALLOWED_SERVER_ID = process.env.ALLOWED_SERVER_ID || '1085614826233016411';
+const CLAIM_ACCESS_HOURS = Number(process.env.CLAIM_ACCESS_HOURS || 24);
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
@@ -30,9 +32,28 @@ client.on('interactionCreate', async interaction => {
             return safeReply(interaction, { content: 'Commands must be used inside a server.', ephemeral: true });
         }
 
-        if (interaction.guildId !== ALLOWED_SERVER_ID) {
+        if (interaction.guildId === ALLOWED_SERVER_ID) {
+            if (interaction.commandName === 'subs') return subsCommand(interaction, client);
+            return;
+        }
+
+        const now = new Date();
+        const activeSub = store.listSubscriptions().find(s => {
+            const end = s.end_date ? new Date(s.end_date) : null;
+            const claimedAt = s.payment_claimed_at ? new Date(s.payment_claimed_at) : null;
+            const provisionalValid = s.payment_status === 'claimed' &&
+                claimedAt && !Number.isNaN(claimedAt.getTime()) &&
+                new Date(claimedAt.getTime() + (CLAIM_ACCESS_HOURS * 60 * 60 * 1000)) > now;
+
+            return s.server_id === interaction.guildId &&
+                end && end > now &&
+                s.is_banned !== true &&
+                (s.payment_status === 'active' || provisionalValid);
+        });
+
+        if (!activeSub) {
             return safeReply(interaction, {
-                content: `This bot only works in the allowed server: ${ALLOWED_SERVER_ID}.`,
+                content: 'No active or temporary subscription found for this server.',
                 ephemeral: true
             });
         }

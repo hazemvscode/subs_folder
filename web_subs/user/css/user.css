@@ -39,3 +39,14 @@ input:focus, select:focus {
 .badge { border: 1px solid rgba(20,20,20,0.18); padding: 6px 12px; border-radius: 999px; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.7px; background: rgba(255, 255, 255, 0.75); color: var(--muted); }
 .list { margin: 0; padding-left: 18px; color: var(--muted); }
 .list li { margin: 6px 0; }
+.support-hero { position: relative; overflow: hidden; isolation: isolate; }
+.support-orb {
+    position: absolute;
+    inset: -80px auto auto -60px;
+    width: 220px;
+    height: 220px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,107,74,0.28), rgba(255,107,74,0.02) 68%);
+    filter: blur(8px);
+    z-index: -1;
+}

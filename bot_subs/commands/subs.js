@@ -37,7 +37,9 @@ module.exports = async (interaction) => {
     userSubs.forEach(sub => {
         const timeLeft = getTimeLeft(sub.end_date);
         const plan = sub.subscription_type ? sub.subscription_type.toUpperCase() : 'N/A';
-        const status = sub.payment_status || 'pending';
+        const status = sub.payment_status === 'claimed'
+            ? 'temporary access'
+            : (sub.payment_status || 'pending');
         embed.addFields({
             name: sub.clan_name || 'Clan',
             value: `Server: ${sub.server_id || 'N/A'}\nPlan: ${plan}\nTime left: ${timeLeft}\nStatus: ${status}`,

@@ -35,9 +35,7 @@
                 <div class="payment-block">
                     <label class="payment-title" for="subPaymentMethod">Payment Method</label>
                     <select id="subPaymentMethod" name="payment_method" class="payment-method">
-                        <option value="paypal">PayPal (Card or PayPal)</option>
-                        <option value="card">Card via PayPal (Visa / Mastercard)</option>
-                        <option value="other">Other Credits</option>
+                        <option value="paypal">PayPal.Me</option>
                     </select>
                     <div class="payment-info">
                         <p class="payment-note">Choose a method to see how to pay.</p>
@@ -45,18 +43,22 @@
                     </div>
                 </div>
                 <div class="payment-info" id="subSuccess" style="display:none;">
-                    <p class="payment-note">Payment complete! You can check status to unlock the invite link.</p>
-                    <a class="button" href="/user/status">Check Payment Status</a>
+                    <p class="payment-note" id="subSuccessText">Temporary access unlocked. You can open the status page now.</p>
+                    <a class="button" id="subStatusLink" href="/user/status">Open Status Page</a>
                 </div>
                 <div class="payment-info">
                     <p class="payment-note">Need help or want to confirm payment? Contact Mazen on Discord.</p>
                     <a class="button" href="https://discord.com/users/1019254470191890473" target="_blank" rel="noopener">Contact Mazen</a>
                 </div>
                 <div class="payment-info" id="subPaypalInfo" style="display:none;">
-                    <p class="payment-note">Use the button below to send the money securely with PayPal or card without leaving your website flow.</p>
-                    <div id="paypalSubscriptionButtons" class="paypal-buttons"></div>
+                    <p class="payment-note">Step 1: click the button below to open PayPal.Me in a new tab and send the exact plan amount.</p>
+                    <div class="payment-details" id="subPaypalSummary"></div>
                 </div>
-                <button type="submit" class="button" id="subFallbackButton">Continue To Payment</button>
+                <div class="payment-info" id="subClaimInfo" style="display:none;">
+                    <p class="payment-note">Step 2: after you send the money on PayPal, come back here and unlock temporary access instantly.</p>
+                    <button type="button" class="button" id="subClaimButton">I Sent The Money</button>
+                </div>
+                <button type="submit" class="button" id="subFallbackButton">Open PayPal.Me</button>
             </form>
 
             <div class="card side-card">
@@ -75,10 +77,10 @@
                 </ul>
                 <h2 style="margin-top:16px;">Payment Steps</h2>
                 <ul class="list">
-                    <li>Choose PayPal or Card (via PayPal).</li>
-                    <li>Complete your payment securely.</li>
-                    <li>After payment, we confirm and activate your plan.</li>
-                    <li>Then you can get the bot invite link on the status page.</li>
+                    <li>Click Open PayPal.Me and send the exact plan amount.</li>
+                    <li>Come back to this page and press I Sent The Money.</li>
+                    <li>You get temporary access fast while payment is being checked.</li>
+                    <li>If payment is fake or wrong, admin can cancel the subscription later.</li>
                 </ul>
                 <h2 style="margin-top:16px;">Get Invite Link</h2>
                 <ul class="list">

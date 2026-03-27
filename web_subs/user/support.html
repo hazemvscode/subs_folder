@@ -21,33 +21,19 @@
         </div>
 
         <div class="page-grid">
-            <form id="donationForm" class="card">
-                <input type="text" name="user_name" placeholder="Your Name" required>
-                <input type="text" name="discord_tag" placeholder="Discord" required>
-                <input type="text" name="clan_name" placeholder="Clan" required>
-                <input type="number" min="1" step="0.01" name="amount" placeholder="Amount in USD" required>
-                <div class="payment-block">
-                    <label class="payment-title" for="donationPaymentMethod">Payment Method</label>
-                    <select id="donationPaymentMethod" name="payment_method" class="payment-method">
-                        <option value="paypal">PayPal (Card or PayPal)</option>
-                        <option value="card">Card via PayPal (Visa / Mastercard)</option>
-                        <option value="other">Other Credits</option>
-                    </select>
-                    <div class="payment-info">
-                        <p class="payment-note">Choose a method to see how to pay.</p>
-                        <div class="payment-details" data-role="details"></div>
+            <div class="card support-hero">
+                <div class="support-orb"></div>
+                <h2>Support With Any Amount</h2>
+                <p class="intro">If you want to support the project, open my PayPal.Me link and send any amount you want.</p>
+                <div class="payment-info">
+                    <p class="payment-note">PayPal.Me link</p>
+                    <div class="payment-details">
+                        <a href="https://paypal.me/mazenabosenna" target="_blank" rel="noopener">paypal.me/mazenabosenna</a>
                     </div>
                 </div>
-                <div class="payment-info">
-                    <p class="payment-note">Need help? Contact Mazen on Discord for support.</p>
-                    <a class="button" href="https://discord.com/users/1019254470191890473" target="_blank" rel="noopener">Contact Mazen</a>
-                </div>
-                <div class="payment-info" id="donationPaypalInfo" style="display:none;">
-                    <p class="payment-note">Pay securely with PayPal or card.</p>
-                    <div id="paypalDonationButtons" class="paypal-buttons"></div>
-                </div>
-                <button type="submit" class="button" id="donationFallbackButton">Support Now</button>
-            </form>
+                <a class="button" href="https://paypal.me/mazenabosenna" target="_blank" rel="noopener">Open PayPal.Me</a>
+                <a class="button secondary" href="https://discord.com/users/1019254470191890473" target="_blank" rel="noopener">Contact Mazen</a>
+            </div>
 
             <div class="card side-card">
                 <h2>Why Support?</h2>
@@ -58,14 +44,14 @@
                 </ul>
                 <h2 style="margin-top:16px;">How It Works</h2>
                 <ul class="list">
-                    <li>Submit the form and pay via PayPal.</li>
-                    <li>We confirm your support quickly.</li>
-                    <li>You help keep the bot fast and reliable.</li>
+                    <li>Open the PayPal.Me link.</li>
+                    <li>Send any amount you want.</li>
+                    <li>Your support helps keep the bot fast and reliable.</li>
                 </ul>
                 <h2 style="margin-top:16px;">Contact</h2>
                 <ul class="list">
                     <li>Discord: MazenEagleeye</li>
-                    <li>Email: support@yourwebsite.com</li>
+                    <li>PayPal: paypal.me/mazenabosenna</li>
                 </ul>
                 <h2 style="margin-top:16px;">After Payment</h2>
                 <ul class="list">
