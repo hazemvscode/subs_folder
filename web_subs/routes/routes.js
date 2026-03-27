@@ -823,6 +823,91 @@ router.post('/api/paypal/capture-order', async (req, res) => {
     }
 });
 
+router.post('/api/paypal/complete-subscription', async (req, res) => {
+    try {
+        const subscriptionType = (req.body.subscription_type || '').toLowerCase().trim();
+        const pricing = PRICING[subscriptionType];
+        if (!pricing) {
+            return res.status(400).json({ ok: false, error: 'Invalid subscription type.' });
+        }
+
+        const orderId = (req.body.order_id || '').trim();
+        const captureId = (req.body.payment_id || '').trim();
+        const currency = (req.body.currency || PAYPAL_CURRENCY).toUpperCase().trim();
+        const amountValue = Number(req.body.amount || 0);
+        if (!orderId || !captureId) {
+            return res.status(400).json({ ok: false, error: 'Missing PayPal payment details.' });
+        }
+        if (currency !== PAYPAL_CURRENCY || Number(amountValue.toFixed(2)) !== Number(pricing.amount.toFixed(2))) {
+            return res.status(400).json({ ok: false, error: 'Payment amount mismatch.' });
+        }
+
+        const cookies = parseCookies(req.headers.cookie || '');
+        const payerEmail = (cookies[USER_EMAIL_COOKIE] || req.body.email || '').trim().toLowerCase();
+        const now = new Date();
+        const endDate = addMonths(now, pricing.months);
+
+        const record = store.addSubscription({
+            user_name: req.body.user_name,
+            discord_tag: req.body.discord_tag,
+            discord_id: req.body.discord_id,
+            tacticool_id: req.body.tacticool_id,
+            clan_name: req.body.clan_name,
+            server_id: req.body.server_id,
+            subscription_type: subscriptionType,
+            amount: pricing.amount,
+            payer_email: payerEmail,
+            payment_method: req.body.payment_method || 'paypal',
+            payment_provider: 'paypal',
+            paypal_order_id: orderId,
+            start_date: now.toISOString(),
+            end_date: endDate.toISOString(),
+            payment_status: 'active',
+            join_date: now.toISOString()
+        });
+
+        const updated = await activateSubscriptionAndNotify(record, captureId);
+        return res.json({ ok: true, item: updated });
+    } catch (err) {
+        console.error('PayPal complete-subscription failed:', err.message || err);
+        return res.status(500).json({ ok: false, error: err.message || 'Payment completion failed.' });
+    }
+});
+
+router.post('/api/paypal/complete-donation', async (req, res) => {
+    try {
+        const orderId = (req.body.order_id || '').trim();
+        const captureId = (req.body.payment_id || '').trim();
+        const amount = Number(req.body.amount || 0);
+        const currency = (req.body.currency || PAYPAL_CURRENCY).toUpperCase().trim();
+        if (!orderId || !captureId || !Number.isFinite(amount) || amount <= 0) {
+            return res.status(400).json({ ok: false, error: 'Missing PayPal payment details.' });
+        }
+        if (currency !== PAYPAL_CURRENCY) {
+            return res.status(400).json({ ok: false, error: 'Payment currency mismatch.' });
+        }
+
+        const record = store.addDonation({
+            user_name: req.body.user_name,
+            discord_tag: req.body.discord_tag,
+            clan_name: req.body.clan_name,
+            amount,
+            payment_method: req.body.payment_method || 'paypal',
+            payment_provider: 'paypal',
+            paypal_order_id: orderId,
+            payment_status: 'active',
+            payment_id: captureId,
+            payment_date: new Date().toISOString(),
+            date: new Date().toISOString()
+        });
+
+        return res.json({ ok: true, item: record });
+    } catch (err) {
+        console.error('PayPal complete-donation failed:', err.message || err);
+        return res.status(500).json({ ok: false, error: err.message || 'Payment completion failed.' });
+    }
+});
+
 router.post('/api/donations', async (req, res) => {
     try {
         store.addDonation({
