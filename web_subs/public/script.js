@@ -153,7 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     window.location.href = data.approve_url;
                     return;
                 } catch (err) {
-                    alert('Failed to start PayPal checkout. Please try again.');
+                    alert(err.message || 'Failed to start PayPal checkout. Please try again.');
                     return;
                 }
             }
@@ -263,7 +263,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     window.location.href = data.approve_url;
                     return;
                 } catch (err) {
-                    alert('Failed to start PayPal checkout. Please try again.');
+                    alert(err.message || 'Failed to start PayPal checkout. Please try again.');
                     return;
                 }
             }

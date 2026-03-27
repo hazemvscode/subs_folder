@@ -730,7 +730,8 @@ router.post('/api/paypal/create-order', async (req, res) => {
         const approve = (order.links || []).find(l => l.rel === 'approve');
         return res.json({ ok: true, approve_url: approve ? approve.href : '', order_id: order.id });
     } catch (err) {
-        return res.status(500).json({ ok: false, error: 'PayPal order failed.' });
+        console.error('PayPal create-order failed:', err.message || err);
+        return res.status(500).json({ ok: false, error: err.message || 'PayPal order failed.' });
     }
 });
 
@@ -769,7 +770,8 @@ router.post('/api/paypal/create-donation-order', async (req, res) => {
         const approve = (order.links || []).find(l => l.rel === 'approve');
         return res.json({ ok: true, approve_url: approve ? approve.href : '', order_id: order.id });
     } catch (err) {
-        return res.status(500).json({ ok: false, error: 'PayPal order failed.' });
+        console.error('PayPal create-donation-order failed:', err.message || err);
+        return res.status(500).json({ ok: false, error: err.message || 'PayPal order failed.' });
     }
 });
 
