@@ -1,8 +1,9 @@
 require('dotenv').config();
 const { Client, GatewayIntentBits } = require('discord.js');
 const store = require('../database/store');
-const ALLOWED_SERVER_ID = process.env.ALLOWED_SERVER_ID || '1085614826233016411';
 const CLAIM_ACCESS_HOURS = Number(process.env.CLAIM_ACCESS_HOURS || 24);
+const ALLOWED_SERVER_ID = process.env.ALLOWED_SERVER_ID || '1085614826233016411';
+const REQUIRE_SERVER_SUBS = String(process.env.REQUIRE_SERVER_SUBS || 'false').toLowerCase() === 'true';
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
@@ -30,6 +31,11 @@ client.on('interactionCreate', async interaction => {
 
         if (!interaction.guildId) {
             return safeReply(interaction, { content: 'Commands must be used inside a server.', ephemeral: true });
+        }
+
+        if (!REQUIRE_SERVER_SUBS) {
+            if (interaction.commandName === 'subs') return subsCommand(interaction, client);
+            return;
         }
 
         if (interaction.guildId === ALLOWED_SERVER_ID) {

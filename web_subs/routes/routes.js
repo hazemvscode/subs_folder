@@ -36,6 +36,7 @@ const PAYPAL_API_BASE = PAYPAL_MODE === 'live'
     ? 'https://api-m.paypal.com'
     : 'https://api-m.sandbox.paypal.com';
 const ALLOWED_SERVER_ID = process.env.ALLOWED_SERVER_ID || '1085614826233016411';
+const REQUIRE_SERVER_SUBS = String(process.env.REQUIRE_SERVER_SUBS || 'false').toLowerCase() === 'true';
 const SMTP_HOST = process.env.SMTP_HOST || '';
 const SMTP_PORT = Number(process.env.SMTP_PORT || 587);
 const SMTP_SECURE = String(process.env.SMTP_SECURE || '').toLowerCase() === 'true';
@@ -206,7 +207,7 @@ const sendSubscriptionSuccessEmail = async (subscription) => {
         '',
         'If you already have the bot, you can ignore the invite link.',
         '',
-        `Allowed server ID: ${ALLOWED_SERVER_ID}`,
+        `Require server subscriptions: ${REQUIRE_SERVER_SUBS ? 'yes' : 'no'}`,
         '',
         'Thank you for your support.'
     ];
@@ -1064,6 +1065,10 @@ router.post('/api/subscriptions/check', async (req, res) => {
     try {
         const discordId = (req.body.discord_id || '').trim();
         const serverId = (req.body.server_id || '').trim();
+
+        if (!REQUIRE_SERVER_SUBS) {
+            return res.json({ ok: true, invite: BOT_INVITE_LINK });
+        }
 
         if (serverId && serverId === ALLOWED_SERVER_ID) {
             return res.json({ ok: true, invite: BOT_INVITE_LINK });

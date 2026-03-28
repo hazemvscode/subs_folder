@@ -3,7 +3,7 @@ const { REST, Routes } = require('discord.js');
 
 const token = process.env.BOT_TOKEN;
 const clientId = process.env.CLIENT_ID;
-const guildId = process.env.GUILD_ID || process.env.ALLOWED_SERVER_ID || '1085614826233016411';
+const guildId = process.env.GUILD_ID || '';
 
 if (!token || !clientId) {
     console.error('Missing BOT_TOKEN or CLIENT_ID environment variables.');
